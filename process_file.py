@@ -97,59 +97,61 @@ class ConfigFile(File):
 			loadConfigSettings()
 		return self.config_items
 
+#metadata text file class
 class MetaFileText(File):
 	cfg_file = None
+	file_dict = None
 
 	#read headers of the file and create a dictionary for it
 	#dictionary for creating files should preserve columns order
 	#dictionary to be submitted to DB has to be sorted alphabetically
 	def getFileDictionary(self, sort = False, sort_by_field = ''):
-		cfg = self.getConfigInfo()
-		fields = cfg.getItemByKey('dict_tmpl_fields_node')
-		#print (cfg.getItemByKey('dict_tmpl'))
-		dict = eval(cfg.getItemByKey('dict_tmpl')) #{fields:[]}
-		#print('Dictionary Step1=> {}'.format(dict))
-		if dict:
-			hdrs = self.GetRowByNumber(1).split(self.file_delim)
-			fld_dict_tmp = eval(cfg.getItemByKey('dict_field_tmpl'))
-			#print('Dictionary Step2.0=> {}'.format(fld_dict_tmp))
-			upd_flds = cfg.getItemByKey('dict_field_tmpl_update_fields').split(',')
-			#print('upd_flds => {}'.format(upd_flds))
 
-			for hdr in hdrs:
-				#print ('fld_dict_tmp => {}'.format(fld_dict_tmp))
-				fld_dict = fld_dict_tmp.copy()
-				#print('Dictionary Step2.01=> {}'.format(fld_dict))
-				#print('Dictionary Step3 (before append) => {}'.format(dict))
-				for upd_fld in upd_flds:
-					#print ('Update field: {}, Update value: {}'.format(upd_fld, hdr))
-					fld_dict[upd_fld] = hdr
-					#print('Dictionary Step2.1 (inside update loop) => {}'.format(fld_dict))
-				#print('Dictionary Step2.2 (after field updates) => {}'.format(fld_dict))
-				dict[fields].append(fld_dict)
-				#print('Dictionary Step3.1 (after append) => {}'.format(dict))
-			#sort dictionary if requested
+		dict = {}
 
-			#print('cfg.getItemByKey("dict_field_sort_by") = {}'.format(cfg.getItemByKey('dict_field_sort_by')))
+		cfg = self.getConfigInfo()#get reference to config info class
+		fields = cfg.getItemByKey('dict_tmpl_fields_node')#get name of the node in dictionary holding array of fields
 
-			if sort:
-				if len(sort_by_field) == 0 or not sort_by_field in dict[fields][0]:
-					#print('cfg.getItemByKey("dict_field_sort_by") = {}'.format(cfg.getItemByKey('dict_field_sort_by')))
-					sort_by_field = cfg.getItemByKey('dict_field_sort_by')
-					#print('sort_by_field #2 ===>>>> {}'.format(len(sort_by_field)))
-					if len(sort_by_field)== 0:
-						sort_by_field = 'name' #hardcoded default
+		if not self.file_dict:
+			dict = eval(cfg.getItemByKey('dict_tmpl')) #{fields:[]}
+			#print('Dictionary Step1=> {}'.format(dict))
+			if dict:
+				hdrs = self.GetRowByNumber(1).split(self.file_delim)
+				fld_dict_tmp = eval(cfg.getItemByKey('dict_field_tmpl'))
+				#print('Dictionary Step2.0=> {}'.format(fld_dict_tmp))
+				upd_flds = cfg.getItemByKey('dict_field_tmpl_update_fields').split(',')
+				#print('upd_flds => {}'.format(upd_flds))
 
-				#print('sort_by_field = {}'.format(sort_by_field))
+				for hdr in hdrs:
+					fld_dict = fld_dict_tmp.copy()
+					for upd_fld in upd_flds:
+						fld_dict[upd_fld] = hdr
+					dict[fields].append(fld_dict)
 
-				if sort_by_field in dict[fields][0]:
-					print('Inside SORT IF; sorting by {} ======>'.format(sort_by_field))
-					#print(dict[fields])
-					#print("name" in dict[fields][0])
-					#update fields element of dictionary with the sorted list of dictionaries
-					dict[fields] = sorted(dict[fields], key=lambda i: i[sort_by_field])
+				self.file_dict = dict
 
-		#print('Dictionary Final - Step3x => {}'.format(dict))
+		dict = self.file_dict
+
+		#sort dictionary if requested
+		if sort:
+			#identify name of the field to apply sorting on the dictionary
+			if len(sort_by_field) == 0 or not sort_by_field in dict[fields][0]:
+				#print('cfg.getItemByKey("dict_field_sort_by") = {}'.format(cfg.getItemByKey('dict_field_sort_by')))
+				sort_by_field = cfg.getItemByKey('dict_field_sort_by')
+				#print('sort_by_field #2 ===>>>> {}'.format(len(sort_by_field)))
+				if len(sort_by_field)== 0:
+					sort_by_field = 'name' #hardcoded default
+
+			#print('sort_by_field = {}'.format(sort_by_field))
+
+			#apply sorting, if given field name present in the dictionary structure
+			if sort_by_field in dict[fields][0]:
+				#print('Inside SORT IF; sorting by {} ======>'.format(sort_by_field))
+				#print(dict[fields])
+				#print("name" in dict[fields][0])
+				#update fields element of dictionary with the sorted list of dictionaries
+				dict[fields] = sorted(dict[fields], key=lambda i: i[sort_by_field])
+
 		return dict
 
 	def getFileDictionary_JSON (self, sort = False, sort_by_field = ''):
@@ -170,14 +172,25 @@ class MetaFileText(File):
 		pass
 
 	#this will convert each row of the file to a JSON based on the file headers
-	def convertRowsToJSON(self):
-		# TODO: implement
-		pass
+	def convertRowToJSON(self, rownum):
 
-	#collect list of mandatory fields to be verified
-	def loadConfigSettings(self):
-		# TODO: implement
-		pass
+		#cfg = self.getConfigInfo() #get configuration
+		#fields = cfg.getItemByKey('dict_tmpl_fields_node')  # get name of the node in dictionary holding array of fields
+
+		#dict = self.getFileDictionary() #get dictionary
+		hdrs = self.GetRowByNumber(1).split(self.file_delim)
+		lst_content = self.GetRowByNumber(rownum).split(self.file_delim) #get content of the row
+
+		#print (hdrs)
+		#print(lst_content)
+
+		#TODO: check if lenght of the dictionary and content is equal
+
+		for hdr, cnt in zip(hdrs, lst_content):
+			print ('{} ==> {}'.format(hdr.strip(), cnt.strip()))
+
+		#TODO: create JSON here
+
 
 	#it will validate provided row against collected config settings
 	def validateSample(self, row):
@@ -246,6 +259,8 @@ if __name__ == '__main__':
 	#read metafile
 	file_to_open = data_folder / "test1.txt"
 	fl = MetaFileText(file_to_open)
+	fl.convertRowToJSON(2)
+	'''
 	dict_json = fl.getFileDictionary_JSON()
 	print ('Not Sorted=================>')
 	print (dict_json)
@@ -255,7 +270,7 @@ if __name__ == '__main__':
 	dict_json_sorted = fl.getFileDictionary_JSON(True)
 	print ('Sorted by default field=================>')
 	print (dict_json_sorted)
-
+	'''
 
 
 	sys.exit()#=============================
