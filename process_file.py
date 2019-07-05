@@ -22,24 +22,22 @@ class File:
 		self.wrkdir = os.path.dirname(os.path.abspath(filepath))
 		self.file_type = file_type
 		self.file_delim = file_delim
-		self.fl = open(self.filepath, "r")
+		#self.fl = open(self.filepath, "r")
 		#print('file delimiter==> {}'.format(self.file_delim))
 
 	def GetFileContent (self):
-		#lineList = [line.rstrip('\n') for line in open(self.filepath)]
 		if not self.lineList:
-			self.lineList = [line.rstrip('\n') for line in self.fl]
+			fl = open(self.filepath, "r")
+			self.lineList = [line.rstrip('\n') for line in fl]
+			fl.close()
 		return self.lineList
 
 	def GetHeaders (self):
-		#with open(self.filepath, "r") as cur_file:
-		#	line = fl.readline().rstrip('\n')
-		#return fl.readline().rstrip('\n')
 		return self.GetRowByNumber (1)
 
 	def GetRowByNumber (self, rownum):
-		#lineList = [line.rstrip('\n') for line in open(self.filepath)]
 		lineList = self.GetFileContent()
+		#check that requested row is withing available records of the file and >0
 		if len(lineList) >= rownum and rownum > 0:
 			return lineList[rownum-1]
 		else:
@@ -49,23 +47,31 @@ class File:
 class ConfigFile(File):
 	config_items = {}
 	config_items_populated = False
-	key_value_delim = ':'
+	key_value_delim = None
+	line_comment_sign = None
 
-	def __init__(self, filepath, file_type=1, file_delim=','):
+	def __init__(self, filepath, file_type=1, key_value_delim=':', line_comment_sign='##'):
+		self.key_value_delim = key_value_delim
+		self.line_comment_sign = line_comment_sign
 		File.__init__(self, filepath, file_type, self.key_value_delim)
 		self.loadConfigSettings()
+
 	#loads config setting assuming that it is a dictionary ==> key: value
 	#to identify all key/value pairs, it will split based on ":" for 1 delimiter only and will keep the rest as value of the key
+	#any text after "##" will be considered a comment and will be ignored
 	def loadConfigSettings(self):
 		if not self.config_items_populated:
 			lns = File.GetFileContent(self)
 
 			for l in lns:
-				values = l.split(self.file_delim, 1) #use only first delimiter
+				#values = l.split(self.file_delim, 1) #use only first delimiter - deprecated code
+
+				#print(l.split(self.line_comment_sign, 1)[0])
+				values = l.split(self.line_comment_sign, 1)[0].split(self.file_delim, 1)  # use only first delimiter
 
 				#print(values)
-				#print(len(values))
 				if len(values) >= 2:
+					#add items to a dictionary
 					self.config_items[values[0].strip()] = values[1].strip()
 			self.config_items_populated = True
 
@@ -78,6 +84,7 @@ class ConfigFile(File):
 		#check if requested key exists
 		#print('item_key = {}'.format(item_key))
 		#print('self.config_items.get(item_key, None) => {}'.format(self.config_items.get(item_key, None)))
+		#print('item_key in self.config_items = {}'.format(item_key in self.config_items))
 		if item_key in self.config_items:
 			#print('Item Exists')
 			return self.config_items[item_key]
@@ -225,19 +232,16 @@ if __name__ == '__main__':
 	printL (fl.GetRowByNumber(2))
 	printL(fl.GetRowByNumber(1))
 
-	'''
+
 	#read config file
 	file_to_open = data_folder / "config.cfg"
 	fl = ConfigFile(file_to_open, 1) #config file will use ':' by default
-	fl.loadConfigSettings()
+	#fl.loadConfigSettings()
 
-	if fl.config_items: # fl.config_items_populated:
-		#print(fl.config_items['Setting2'])
-		print(fl.getItemByKey('dict_field_template'))
-		print(fl.getItemByKey('dict_template'))
-	else:
-		print ('No config data loaded!!!!')
-	'''
+	print('Setting12 = {}'.format(fl.getItemByKey('Setting12')))
+
+
+	#sys.exit()
 
 	#read metafile
 	file_to_open = data_folder / "test1.txt"
@@ -245,8 +249,8 @@ if __name__ == '__main__':
 	dict_json = fl.getFileDictionary_JSON()
 	print ('Not Sorted=================>')
 	print (dict_json)
-	dict_json_sorted = fl.getFileDictionary_JSON(True, "type1")
-	print ('Sorted by "type1" field=================>')
+	dict_json_sorted = fl.getFileDictionary_JSON(True, "type")
+	print ('Sorted by "type" field=================>')
 	print (dict_json_sorted)
 	dict_json_sorted = fl.getFileDictionary_JSON(True)
 	print ('Sorted by default field=================>')
