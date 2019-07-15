@@ -106,6 +106,7 @@ class ConfigFile(File):
 class MetaFileText(File):
 	cfg_file = None
 	file_dict = OrderedDict()
+	rows = OrderedDict()
 
 	#read headers of the file and create a dictionary for it
 	#dictionary for creating files should preserve columns order
@@ -179,44 +180,44 @@ class MetaFileText(File):
 	#this will convert each row to a JSON ready dictionary based on the headers of the file
 	def getFileRow(self, rownum):
 
-		#cfg = self.getConfigInfo() #get configuration
-		#fields = cfg.getItemByKey('dict_tmpl_fields_node')  # get name of the node in dictionary holding array of fields
-		row_dict = OrderedDict()
 		out_dict = {'row':{},'error':None}
 
 		hdrs = self.GetRowByNumber(1).split(self.file_delim) #get list of headers
 		lst_content = self.GetRowByNumber(rownum).split(self.file_delim) #get list of values contained by the row
 
+		row = Row(self, rownum, lst_content, hdrs)
+		row.error = RowError(row)
+
 		if len(hdrs) == len (lst_content):
 			for hdr, cnt in zip(hdrs, lst_content):
 				#TODO: validate row for required fields
-				row_dict[hdr.strip()] = cnt.strip()
+				#row_dict[hdr.strip()] = cnt.strip()
+				#print ('hdr.strip() = {}, cng.strip() = {}'.format(hdr.strip(), cnt.strip()))
+				row.row_dict[hdr.strip()] = cnt.strip()
 		else:
-			row_dict = None
-			err = RowError(self, rownum, lst_content, hdrs)
-			err.addError('Incorrect number of fields!')
-			#err.addError('Additional Error for the same line') #test error
-			out_dict['error'] = err
+			row.row_dict = None
+			row.error.addError('Incorrect number of fields! The row contains {} field(s), while {} is expected.'.format(len (lst_content), len(hdrs)))
 
-		out_dict['row'] = row_dict
-		#print (row_dict)
-		#print (json.dumps(row_dict))
-		return out_dict #row_dict
-
-	#TODO: is this method needed?
-	def getFileRow_JSON(self, rownum):
-		return json.dumps(self.getFileRow(rownum)['row'])
+		return row #out_dict
 
 	def processFile(self):
 		numRows = self.RowsCount()
 		for i in range(1, numRows):
 			row = self.getFileRow(i+1)
-			if not row['error']:
+			self.rows[row.row_number] = row #add Row class reference to the list of all rows
+
+			#print ('Row to JSON = {}'.format(row.toJSON()))
+			#print ('Errors in Row: {}'.format(row.error.getErrors()))
+			#er = row.error.getErrors()
+			#print (len(er['errors']))
+			#print(row.error.errorsExist())
+
+			if not row.error.errorsExist():
 				#TODO: Implement action to save good records to DB
-				print ('No Errors, Row Info: {}'.format (json.dumps(row['row'])))
+				print ('No Errors, Row Info: {}'.format (row.toJSON()))
 			else:
 				# TODO: Implement action to save error records to log files
-				print ('Errors Present: {}, Row Info: {}'.format(row['error'].getErrors(), row['row']))
+				print ('Errors Present: {}, Row Info: {}'.format(row.error.getErrors(), row.row_content))
 
 	#it will validate provided row against collected config settings
 	def validateSample(self, row):
@@ -228,21 +229,54 @@ class MetaFileText(File):
 		# TODO: implement
 		pass
 
-class RowError():
-	file = None
-	#file_path = ''
-	row_number = None
-	row = None
-	header = None
-	errors = []
+class Row ():
+	file = None #reference to the file object that this row belongs to
+	row_number = None #row number - header = row #1, next line #2, etc.
+	row_content = [] #list of values from a file for this row
+	_row_dict = None #OrderedDict()
+	header = [] #list of values from a file for the first row (headers)
+	_error = None #RowError class reference holding all errors associated with the current row
 
-	def __init__(self, file, row_num, row, header):
+	def __init__(self, file, row_num, row_content, header):
 		self.file = file
 		self.row_number = row_num
-		self.row = row
+		self.row_content = row_content
 		self.header = header
-		#self.file_path = file.filepath
-		#print ('File passed to Error: {}'.format(file.filepath))
+		self.row_dict = OrderedDict()
+
+	@property
+	def row_dict (self):
+		return self._row_dict
+
+	@row_dict.setter
+	def row_dict(self, value):
+		self._row_dict = value
+
+	@property
+	def error(self):
+		return self._error
+
+	@error.setter
+	def error(self, value):
+		self._error = value
+
+
+	def toJSON(self):
+		#print ('From withing toJSON - Dictionary source:{}'.format(self.row_dict))
+		return json.dumps(self.row_dict)
+
+class RowError():
+	'''
+	file = None
+	row_number = None
+	header = None
+	'''
+	row = None
+	errors = None
+
+	def __init__(self, clsRow):
+		self.row = clsRow
+		self.errors = []
 
 	def addError(self, error_desc ):
 		error = {
@@ -250,20 +284,27 @@ class RowError():
 		}
 		self.errors.append(error)
 
+	def errorsExist (self):
+		return (len(self.errors) > 0)
+
 	def getErrors(self):
 		error = {
-			'file':  str(self.file.filepath),
-			'row_number':self.row_number,
-			'row':self.row,
-			'header':self.header,
+			'file': str(self.row.file.filepath),
+			'row_number':self.row.row_number,
+			'row':self.row.row_content,
+			'header':self.row.header,
 			'errors':self.errors
 		}
 		return error
-		#print('File generated error = {}'.format(self.file.filepath))
-		#print (self.errors)
 
 #if executed by itself, do the following
 if __name__ == '__main__':
+
+	l = []
+	print(len(l))
+	l.append(1)
+	print(len(l))
+	#sys.exit()
 
 	'''
 	# Testing: sorting of dictionaries
@@ -319,13 +360,17 @@ if __name__ == '__main__':
 	#read metafile #1
 	file_to_open = data_folder / "test1.txt"
 	fl = MetaFileText(file_to_open)
-	print ('Testing "getFileRow" => {}'.format(fl.getFileRow(2)))
-	print ('Testing "getFileRow_JSON" => {}'.format(fl.getFileRow_JSON(2)))
+	print ('Testing "getFileRow (row_dict)" => {}'.format(fl.getFileRow(2).row_dict))
+	print ('Testing "getFileRow.toJSON" => {}'.format(fl.getFileRow(2).toJSON()))
+	print('Process metafile {}'.format(fl.filepath))
 	fl.processFile()
+
+	#sys.exit()
 
 	# read metafile #2
 	file_to_open = data_folder / "test2.txt"
 	fl = MetaFileText(file_to_open)
+	print('Process metafile {}'.format(fl.filepath))
 	fl.processFile()
 
 	'''
