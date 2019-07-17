@@ -12,8 +12,17 @@ def printL (m):
 		print (m)
 
 class FieldIdMethod:
-	name = 'name'
-	number = 'number'
+	field_id_methods = ['name', 'number']
+	name = field_id_methods[0]
+	number = field_id_methods[1]
+
+	# @property
+	# def name(self):
+	# 	return self.field_id_methods[0]
+	#
+	# @property
+	# def number(self):
+	# 	return self.field_id_methods[1]
 
 #Text file class (used as a base)
 class File:
@@ -26,7 +35,6 @@ class File:
 	_headers = []
 	_error = None  # FileErrors class reference holding all errors associated with the current row
 	_sample_id_field_names = []
-	_field_id_methods = ['name', 'number']  # this are the expected id methods to be used for identifying sample_id and mandatory fields
 
 	def __init__(self, filepath, file_type = 1, file_delim = ','):
 		self.filepath = filepath
@@ -37,10 +45,6 @@ class File:
 		#headers = self.GetHeaders() #self.GetRowByNumber(1).split(self.file_delim) #save header of the file to a list
 		self._error = ferr.FileError(self)
 		print('----------Init for file {}'.format(self.filename))
-
-	@property
-	def field_id_methods(self):
-		return self._field_id_methods
 
 	@property
 	def headers(self):
@@ -284,14 +288,14 @@ class MetaFileText(File):
 		return out_val
 
 	def _verify_id_method (self, method, process_verified_desc = 'Unknown'):
-		if not method in self.field_id_methods:
+		if not method in FieldIdMethod.field_id_methods:
 			# incorrect method was provided
 			self.error.addError('Configuration issue - unexpected identification method "{}" was provided for "{}". Expected methods are: {}'
-								.format(method, process_verified_desc, ', '.join(self.field_id_methods)))
+								.format(method, process_verified_desc, ', '.join(FieldIdMethod.field_id_methods)))
 
 	def _verify_field_id_type_vs_method (self, method, fields, process_verified_desc = 'Unknown'):
-		if method in self.field_id_methods:
-			if method == self.field_id_methods[1]: # 'number'
+		if method in FieldIdMethod.field_id_methods:
+			if method == FieldIdMethod.number: # 'number'
 				#check that all provided fields are numbers
 				for f in fields:
 					if not f.isnumeric():
@@ -324,9 +328,9 @@ class MetaFileText(File):
 			for mf in mandatFields:
 				# TODO create custom type to store possible values of mandatMethod
 				#check mandatory fields
-				if mandatMethod == FieldIdMethod.name:  # self.field_id_methods[0]: # 'name':
+				if mandatMethod == FieldIdMethod.name:  # 'name':
 					hdr_val = hdr.strip()
-				elif mandatMethod == FieldIdMethod.number: # self.field_id_methods[1]: # 'number':
+				elif mandatMethod == FieldIdMethod.number: # 'number':
 					hdr_val = i
 				else:
 					hdr_val = None

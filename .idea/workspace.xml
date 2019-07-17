@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="BookmarkManager">
-    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="247" mnemonic="1" />
-    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="37" mnemonic="9" />
+    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="251" mnemonic="1" />
+    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="45" mnemonic="9" />
     <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="93" mnemonic="4" />
-    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="375" mnemonic="2" />
+    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="379" mnemonic="2" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b6d3ca2d-8b0c-4618-8953-fcbcfccf6430" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/process_file.py" beforeDir="false" afterPath="$PROJECT_DIR$/process_file.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/study01/config.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/study01/config.cfg" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -22,8 +22,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/process_file.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="136">
-              <caret line="288" column="52" selection-start-line="288" selection-start-column="52" selection-end-line="288" selection-end-column="52" />
+            <state relative-caret-position="311">
+              <caret line="376" column="46" lean-forward="true" selection-start-line="376" selection-start-column="46" selection-end-line="376" selection-end-column="46" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
                 <element signature="e#1278#1296#0" />
@@ -65,6 +65,7 @@
     <findStrings>
       <find>Summary of errors for file</find>
       <find>validateMandatoryFieldsExist</find>
+      <find>field_id_methods</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -188,8 +189,8 @@
       <window_info anchor="bottom" id="Event Log" sideWeight="0.50053304" side_tool="true" weight="0.32936078" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32936078" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49946696" visible="true" weight="0.6738895" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.3997833" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49946696" weight="0.33152762" />
+      <window_info active="true" anchor="bottom" id="Debug" order="3" visible="true" weight="0.3997833" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
@@ -205,11 +206,34 @@
     <option name="LAST_COMMIT_MESSAGE" value="Adds pycharm project and installs xlrd and pyodbc packages into the current venv" />
   </component>
   <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/process_file.py</url>
+          <line>307</line>
+          <option name="timeStamp" value="10" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/process_file.py</url>
+          <line>350</line>
+          <option name="timeStamp" value="11" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
         <watch expression="self.error" />
       </configuration>
     </watches-manager>
+  </component>
+  <component name="debuggerHistoryManager">
+    <expressions id="evaluateExpression">
+      <expression>
+        <expression-string>FieldIdMethod.number</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+    </expressions>
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/file_errors.py">
@@ -227,8 +251,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/process_file.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="136">
-          <caret line="288" column="52" selection-start-line="288" selection-start-column="52" selection-end-line="288" selection-end-column="52" />
+        <state relative-caret-position="311">
+          <caret line="376" column="46" lean-forward="true" selection-start-line="376" selection-start-column="46" selection-end-line="376" selection-end-column="46" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
             <element signature="e#1278#1296#0" />
