@@ -1,19 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="BookmarkManager">
-    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="243" mnemonic="1" />
-    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="33" mnemonic="9" />
+    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="247" mnemonic="1" />
+    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="37" mnemonic="9" />
     <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="93" mnemonic="4" />
-    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="371" mnemonic="2" />
+    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="375" mnemonic="2" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b6d3ca2d-8b0c-4618-8953-fcbcfccf6430" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/R_User_Library.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/file_errors.py" beforeDir="false" afterPath="$PROJECT_DIR$/file_errors.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/process_file.py" beforeDir="false" afterPath="$PROJECT_DIR$/process_file.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/study01/config.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/study01/config.cfg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/study01/test1.txt" beforeDir="false" afterPath="$PROJECT_DIR$/study01/test1.txt" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -26,8 +22,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/process_file.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="247">
-              <caret line="284" column="92" selection-start-line="284" selection-start-column="92" selection-end-line="284" selection-end-column="92" />
+            <state relative-caret-position="136">
+              <caret line="288" column="52" selection-start-line="288" selection-start-column="52" selection-end-line="288" selection-end-column="52" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
                 <element signature="e#1278#1296#0" />
@@ -52,7 +48,7 @@
         <entry file="file://$PROJECT_DIR$/file_errors.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="313">
-              <caret line="93" column="15" lean-forward="true" selection-start-line="93" selection-start-column="8" selection-end-line="93" selection-end-column="22" />
+              <caret line="93" column="15" selection-start-line="93" selection-start-column="8" selection-end-line="93" selection-end-column="22" />
               <folding>
                 <element signature="e#2006#2025#0" />
                 <element signature="e#2071#2091#0" />
@@ -192,7 +188,7 @@
       <window_info anchor="bottom" id="Event Log" sideWeight="0.50053304" side_tool="true" weight="0.32936078" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32936078" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49946696" visible="true" weight="0.4409534" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49946696" visible="true" weight="0.6738895" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.3997833" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -219,7 +215,7 @@
     <entry file="file://$PROJECT_DIR$/file_errors.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="313">
-          <caret line="93" column="15" lean-forward="true" selection-start-line="93" selection-start-column="8" selection-end-line="93" selection-end-column="22" />
+          <caret line="93" column="15" selection-start-line="93" selection-start-column="8" selection-end-line="93" selection-end-column="22" />
           <folding>
             <element signature="e#2006#2025#0" />
             <element signature="e#2071#2091#0" />
@@ -231,8 +227,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/process_file.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="247">
-          <caret line="284" column="92" selection-start-line="284" selection-start-column="92" selection-end-line="284" selection-end-column="92" />
+        <state relative-caret-position="136">
+          <caret line="288" column="52" selection-start-line="288" selection-start-column="52" selection-end-line="288" selection-end-column="52" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
             <element signature="e#1278#1296#0" />

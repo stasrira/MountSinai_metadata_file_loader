@@ -11,6 +11,10 @@ def printL (m):
 	if __name__ == '__main__':
 		print (m)
 
+class FieldIdMethod:
+	name = 'name'
+	number = 'number'
+
 #Text file class (used as a base)
 class File:
 	filepath = ''
@@ -282,7 +286,7 @@ class MetaFileText(File):
 	def _verify_id_method (self, method, process_verified_desc = 'Unknown'):
 		if not method in self.field_id_methods:
 			# incorrect method was provided
-			self.error.addError('Unexpected identification method "{}" was provided for "{}". Expected methods are: {}'
+			self.error.addError('Configuration issue - unexpected identification method "{}" was provided for "{}". Expected methods are: {}'
 								.format(method, process_verified_desc, ', '.join(self.field_id_methods)))
 
 	def _verify_field_id_type_vs_method (self, method, fields, process_verified_desc = 'Unknown'):
@@ -293,7 +297,7 @@ class MetaFileText(File):
 					if not f.isnumeric():
 						# report error
 						self.error.addError(
-							'Provided value "{}" for a field number for "{}" is not numeric while the declared method is "{}".'
+							'Configuration issue - provided value "{}" for a field number of "{}" is not numeric while the declared method is "{}".'
 							.format(f, process_verified_desc, method))
 
 
@@ -320,9 +324,9 @@ class MetaFileText(File):
 			for mf in mandatFields:
 				# TODO create custom type to store possible values of mandatMethod
 				#check mandatory fields
-				if mandatMethod == self.field_id_methods[0]: # 'name':
+				if mandatMethod == FieldIdMethod.name:  # self.field_id_methods[0]: # 'name':
 					hdr_val = hdr.strip()
-				elif mandatMethod == self.field_id_methods[1]: # 'number':
+				elif mandatMethod == FieldIdMethod.number: # self.field_id_methods[1]: # 'number':
 					hdr_val = i
 				else:
 					hdr_val = None
@@ -359,9 +363,9 @@ class MetaFileText(File):
 			i += 1
 			for sf in sampleIdFields:
 				# check sample_id fields
-				if sampleIdMethod == self.field_id_methods[0]: # 'name':
+				if sampleIdMethod == FieldIdMethod.name:  # self.field_id_methods[0]: # 'name':
 					smp_val = hdr.strip()
-				elif sampleIdMethod == self.field_id_methods[1]: # 'number':
+				elif sampleIdMethod == FieldIdMethod.number: # self.field_id_methods[1]: # 'number':
 					smp_val = i
 				else:
 					smp_val = None
