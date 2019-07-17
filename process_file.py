@@ -1,11 +1,10 @@
-#import pyodbc
+import pyodbc
 import sys
 import os
 from pathlib import Path
-#import xlrd #installation: pip install xlrd
+import xlrd #installation: pip install xlrd
 import json
 from collections import OrderedDict
-#from file_errors import *
 import file_errors as ferr #custom library containing all error processing related classes
 
 def printL (m):
@@ -266,14 +265,14 @@ class MetaFileText(File):
 
 		return out_val
 
-		#verify that all mandatory fields were present in the file
-		if len(mandatFields) != len(mandatFieldUsed):
-			for mf in mandatFields:
-				#print ('mandatory field (by {}) = {}'.format(mandatMethod, mf))
-				if not mf.strip() in mandatFieldUsed:
-					mandatFieldMissed.append(mf.strip())
-			# report error for absent mandatory field
-			row.error.addError('Row #{}. Mandatory field {}(s): {} - was(were) not found in the file.'.format(row.row_number, mandatMethod,','.join(mandatFieldMissed)))
+		#verify that all mandatory fields were present in the file - moved to function validateMandatoryFieldsExist
+		# if len(mandatFields) != len(mandatFieldUsed):
+		# 	for mf in mandatFields:
+		# 		#print ('mandatory field (by {}) = {}'.format(mandatMethod, mf))
+		# 		if not mf.strip() in mandatFieldUsed:
+		# 			mandatFieldMissed.append(mf.strip())
+		# 	# report error for absent mandatory field
+		# 	row.error.addError('Row #{}. Mandatory field {}(s): {} - was(were) not found in the file.'.format(row.row_number, mandatMethod,','.join(mandatFieldMissed)))
 
 		return out_val
 
