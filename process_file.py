@@ -21,6 +21,8 @@ class File:
 	lineList = []
 	_headers = []
 	_error = None  # FileErrors class reference holding all errors associated with the current row
+	_sample_id_field_names = []
+	_field_id_methods = ['name', 'number']  # this are the expected id methods to be used for identifying sample_id and mandatory fields
 
 	def __init__(self, filepath, file_type = 1, file_delim = ','):
 		self.filepath = filepath
@@ -31,6 +33,10 @@ class File:
 		#headers = self.GetHeaders() #self.GetRowByNumber(1).split(self.file_delim) #save header of the file to a list
 		self._error = ferr.FileError(self)
 		print('----------Init for file {}'.format(self.filename))
+
+	@property
+	def field_id_methods(self):
+		return self._field_id_methods
 
 	@property
 	def headers(self):
@@ -49,6 +55,14 @@ class File:
 	@error.setter
 	def error(self, value):
 		self._error = value
+
+	@property
+	def sample_id_field_names(self):
+		return self._sample_id_field_names
+
+	@sample_id_field_names.setter
+	def sample_id_field_names(self, value):
+		self._sample_id_field_names = value
 
 	def GetFileContent (self):
 		if not self.lineList:
@@ -223,7 +237,7 @@ class MetaFileText(File):
 		# print('file name through Error object - getFileRow() - after Row.error assignment = {}'.format(self.error.entity.filepath))
 
 		if len(hdrs) == len (lst_content):
-			self.validateMandatoryFieldsPerRow(row) # validate row for required fields being populated
+			self._validateMandatoryFieldsPerRow(row) # validate row for required fields being populated
 
 			#create dictionary of the row, so it can be converted to JSON
 			for hdr, cnt in zip(hdrs, lst_content):
@@ -234,7 +248,7 @@ class MetaFileText(File):
 
 		return row #out_dict
 
-	def validateMandatoryFieldsPerRow(self, row):
+	def _validateMandatoryFieldsPerRow(self, row):
 		cfg = self.getConfigInfo()
 		delim = self.configValueListSeparator()
 		mandatFields = cfg.getItemByKey('file_row_mandatory_fields').split(delim)
@@ -265,25 +279,36 @@ class MetaFileText(File):
 
 		return out_val
 
-		#verify that all mandatory fields were present in the file - moved to function validateMandatoryFieldsExist
-		# if len(mandatFields) != len(mandatFieldUsed):
-		# 	for mf in mandatFields:
-		# 		#print ('mandatory field (by {}) = {}'.format(mandatMethod, mf))
-		# 		if not mf.strip() in mandatFieldUsed:
-		# 			mandatFieldMissed.append(mf.strip())
-		# 	# report error for absent mandatory field
-		# 	row.error.addError('Row #{}. Mandatory field {}(s): {} - was(were) not found in the file.'.format(row.row_number, mandatMethod,','.join(mandatFieldMissed)))
+	def _verify_id_method (self, method, process_verified_desc = 'Unknown'):
+		if not method in self.field_id_methods:
+			# incorrect method was provided
+			self.error.addError('Unexpected identification method "{}" was provided for "{}". Expected methods are: {}'
+								.format(method, process_verified_desc, ', '.join(self.field_id_methods)))
 
-		return out_val
+	def _verify_field_id_type_vs_method (self, method, fields, process_verified_desc = 'Unknown'):
+		if method in self.field_id_methods:
+			if method == self.field_id_methods[1]: # 'number'
+				#check that all provided fields are numbers
+				for f in fields:
+					if not f.isnumeric():
+						# report error
+						self.error.addError(
+							'Provided value "{}" for a field number for "{}" is not numeric while the declared method is "{}".'
+							.format(f, process_verified_desc, method))
 
-	def validateMandatoryFieldsExist(self):
+
+	def _validateMandatoryFieldsExist(self):
 		cfg = self.getConfigInfo()
 		delim = self.configValueListSeparator()
 		mandatFields = cfg.getItemByKey('file_row_mandatory_fields').split(delim)
 		mandatMethod = cfg.getItemByKey('file_row_mandatory_fields_id_method').split(delim)[0].strip()
-		out_val = 0  # keeps number of found validation errors
+		#out_val = 0  # keeps number of found validation errors
 		mandatFieldUsed = []
 		mandatFieldMissed = []
+
+		self._verify_id_method(mandatMethod, 'file_row_mandatory_fields_id_method')
+		self._verify_field_id_type_vs_method(mandatMethod, mandatFields, 'file_row_mandatory_fields')
+
 		hdrs = self.headers #self.GetHeaders()
 		#print('>>>>>>>>>>>>>>>>>fileName through file object = {}'.format(self.filename))
 		err = self.error #reference to the FileError class of this file
@@ -294,9 +319,10 @@ class MetaFileText(File):
 			i += 1
 			for mf in mandatFields:
 				# TODO create custom type to store possible values of mandatMethod
-				if mandatMethod == 'name':
+				#check mandatory fields
+				if mandatMethod == self.field_id_methods[0]: # 'name':
 					hdr_val = hdr.strip()
-				elif mandatMethod == 'number':
+				elif mandatMethod == self.field_id_methods[1]: # 'number':
 					hdr_val = i
 				else:
 					hdr_val = None
@@ -310,16 +336,55 @@ class MetaFileText(File):
 				if not mf.strip() in mandatFieldUsed:
 					mandatFieldMissed.append(mf.strip())
 			# report error for absent mandatory field
-			print('File ERROR reported!!!')
+			# print('File ERROR reported!!!')
 			err.addError('File {}. Mandatory field {}(s): {} - was(were) not found in the file.'.format(self.filename, mandatMethod,','.join(mandatFieldMissed)))
-			print ('File Error Content: {}'.format(err.getErrorsToStr()))
+			# print ('File Error Content: {}'.format(err.getErrorsToStr()))
 
-			#row.error.addError('File {}. Mandatory field {}(s): {} - was(were) not found in the file.'.format(self.filename, mandatMethod,','.join(mandatFieldMissed)))
+	def _validateSampleIDFields(self):
+		cfg = self.getConfigInfo()
+		delim = self.configValueListSeparator()
+		sampleIdFields = cfg.getItemByKey('sample_id_fields').split(delim)
+		sampleIdMethod = cfg.getItemByKey('sample_id_method').split(delim)[0].strip()
+		samlpeIdFieldUsed = []
+		samlpeIdFieldMissed = []
 
+		hdrs = self.headers # self.GetHeaders()
+		err = self.error # reference to the FileError class of this file
+
+		self._verify_id_method(sampleIdMethod, 'sample_id_method')
+		self._verify_field_id_type_vs_method(sampleIdMethod, sampleIdFields, 'sample_id_fields')
+
+		i = 0  # keeps field count
+		for hdr in hdrs:
+			i += 1
+			for sf in sampleIdFields:
+				# check sample_id fields
+				if sampleIdMethod == self.field_id_methods[0]: # 'name':
+					smp_val = hdr.strip()
+				elif sampleIdMethod == self.field_id_methods[1]: # 'number':
+					smp_val = i
+				else:
+					smp_val = None
+
+				if str(smp_val) == sf.strip():
+					samlpeIdFieldUsed.append(sf.strip())
+
+		if len(sampleIdFields) != len(samlpeIdFieldUsed):
+			for sf in sampleIdFields:
+				if not sf.strip() in samlpeIdFieldUsed:
+					# print('Missed Sample ID field = {}'.format(sf.strip()))
+					samlpeIdFieldMissed.append(sf.strip())
+			err.addError('File {}. Sample ID field {}(s): {} - was(were) not found in the file.'.format(self.filename, sampleIdMethod,','.join(samlpeIdFieldMissed)))
 
 	def processFile(self):
 		# print('file name through Error object - inside processFile() before validateMandatoryFieldsExist = {}'.format(self.error.entity.filepath)) #self.file.error.entity.filepath
-		self.validateMandatoryFieldsExist()
+		self._validateMandatoryFieldsExist()
+		self._validateSampleIDFields()
+
+		if self.error.errorsExist():
+			# report file level errors
+			print('=====>>>> File ERROR reported!!!')
+			print ('File Error Content: {}'.format(self.error.getErrorsToStr()))
 		# print('file name through Error object - inside processFile() after validateMandatoryFieldsExist = {}'.format(self.error.entity.filepath))
 
 		numRows = self.RowsCount()
@@ -336,16 +401,16 @@ class MetaFileText(File):
 				print ('Errors Present: {}, Row Info: {}'.format(row.error.getErrorsToStr(), row.row_content))
 
 		# summary of errors in file
-		print ('Summary of errors for file {}'.format(self.filename))
-		print('Summary of File level errors: {}'.format(self.error.getErrorsToStr()))
-		row_err_cnt = 0
-		for d in self.rows.values():
-			if (d.error.errorsExist()):
-				row_err_cnt += 1
-				print ('Row level error: {}'.format(d.error.getErrorsToStr()))
+		print ('------> Summary of errors for file {}'.format(self.filename))
+		print('Summary of File level errors: {}'.format(self.error.getErrorsToStr())) if self.error.errorsExist() else print('No File level errors!')
+
+		row_err_cnt = self.error.rowErrorsCount()
 		if row_err_cnt == 0:
 			print('No Row level errors found for this file!')
-
+		else:
+			for d in self.rows.values():
+				if (d.error.errorsExist()):
+					print ('Row level error: {}'.format(d.error.getErrorsToStr()))
 
 	# it will submit given row to DB using config settings
 	def submitSampleToDB(self, row):
@@ -424,7 +489,7 @@ if __name__ == '__main__':
 	#sys.exit()
 	'''
 
-	data_folder = Path("E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/LoadMetadataFromFile/study01")
+	data_folder = Path("E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/study01")
 	#print (data_folder)
 	file_to_open = data_folder / "test1.txt"
 	#print (file_to_open)
@@ -462,7 +527,7 @@ if __name__ == '__main__':
 	print('Process metafile: {}'.format(fl1.filename))
 	fl1.processFile()
 
-	#sys.exit()
+	# sys.exit()
 
 	# read metafile #2
 	file_to_open = data_folder / "test2.txt"

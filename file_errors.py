@@ -91,6 +91,13 @@ class FileError(EntityErrors):
 	def getErrors(self):
 		return EntityErrors.getErrors(self)
 
+	def rowErrorsCount (self):
+		row_err_cnt = 0
+		for d in self.entity.rows.values():
+			if (d.error.errorsExist()):
+				row_err_cnt += 1
+		return row_err_cnt
+
 	def getErrorsToStr(self):
 		err_lst = []
 		for er in EntityErrors.getErrors(self):

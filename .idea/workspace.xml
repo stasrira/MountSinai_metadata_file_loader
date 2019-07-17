@@ -1,13 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="BookmarkManager">
+    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="243" mnemonic="1" />
+    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="33" mnemonic="9" />
+    <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="93" mnemonic="4" />
+    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="371" mnemonic="2" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="b6d3ca2d-8b0c-4618-8953-fcbcfccf6430" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/MountSinai_metadata_file_loader.iml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/.idea/libraries/R_User_Library.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/file_errors.py" beforeDir="false" afterPath="$PROJECT_DIR$/file_errors.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/process_file.py" beforeDir="false" afterPath="$PROJECT_DIR$/process_file.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/study01/config.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/study01/config.cfg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/study01/test1.txt" beforeDir="false" afterPath="$PROJECT_DIR$/study01/test1.txt" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -20,24 +26,50 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/process_file.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="650">
-              <caret line="277" lean-forward="true" selection-start-line="277" selection-end-line="277" />
+            <state relative-caret-position="247">
+              <caret line="284" column="92" selection-start-line="284" selection-start-column="92" selection-end-line="284" selection-end-column="92" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
+                <element signature="e#1278#1296#0" />
+                <element signature="e#1340#1359#0" />
+                <element signature="e#1407#1441#0" />
+                <element signature="e#1459#1478#0" />
+                <element signature="e#1391#1536#0" />
+                <element signature="e#1713#1916#0" />
+                <element signature="e#1965#2047#0" />
+                <element signature="e#2093#3972#0" />
                 <element signature="e#4347#5630#0" />
                 <element signature="e#5704#5864#0" />
                 <element signature="e#5937#6413#0" />
                 <element signature="e#6454#6807#0" />
                 <element signature="e#6844#6867#0" />
-                <element signature="e#8388#10013#0" />
-                <element signature="e#10058#11749#0" />
-                <element signature="e#11778#13142#0" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/file_errors.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="313">
+              <caret line="93" column="15" lean-forward="true" selection-start-line="93" selection-start-column="8" selection-end-line="93" selection-end-column="22" />
+              <folding>
+                <element signature="e#2006#2025#0" />
+                <element signature="e#2071#2091#0" />
+                <element signature="e#2122#2171#0" />
+                <element signature="e#2263#2580#0" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
     </leaf>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>Summary of errors for file</find>
+      <find>validateMandatoryFieldsExist</find>
+    </findStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -50,6 +82,7 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
+        <option value="$PROJECT_DIR$/file_errors.py" />
         <option value="$PROJECT_DIR$/process_file.py" />
       </list>
     </option>
@@ -136,6 +169,14 @@
       <option name="presentableId" value="Default" />
       <updated>1563382431072</updated>
     </task>
+    <task id="LOCAL-00001" summary="Adds pycharm project and installs xlrd and pyodbc packages into the current venv">
+      <created>1563384123431</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1563384123431</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -150,9 +191,9 @@
       <window_info anchor="bottom" id="Terminal" />
       <window_info anchor="bottom" id="Event Log" sideWeight="0.50053304" side_tool="true" weight="0.32936078" />
       <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49946696" weight="0.32936078" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32936078" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49946696" visible="true" weight="0.4409534" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.3997833" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
@@ -163,21 +204,50 @@
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
     </layout>
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Adds pycharm project and installs xlrd and pyodbc packages into the current venv" />
+    <option name="LAST_COMMIT_MESSAGE" value="Adds pycharm project and installs xlrd and pyodbc packages into the current venv" />
+  </component>
+  <component name="XDebuggerManager">
+    <watches-manager>
+      <configuration name="PythonConfigurationType">
+        <watch expression="self.error" />
+      </configuration>
+    </watches-manager>
+  </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/file_errors.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="313">
+          <caret line="93" column="15" lean-forward="true" selection-start-line="93" selection-start-column="8" selection-end-line="93" selection-end-column="22" />
+          <folding>
+            <element signature="e#2006#2025#0" />
+            <element signature="e#2071#2091#0" />
+            <element signature="e#2122#2171#0" />
+            <element signature="e#2263#2580#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/process_file.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="650">
-          <caret line="277" lean-forward="true" selection-start-line="277" selection-end-line="277" />
+        <state relative-caret-position="247">
+          <caret line="284" column="92" selection-start-line="284" selection-start-column="92" selection-end-line="284" selection-end-column="92" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
+            <element signature="e#1278#1296#0" />
+            <element signature="e#1340#1359#0" />
+            <element signature="e#1407#1441#0" />
+            <element signature="e#1459#1478#0" />
+            <element signature="e#1391#1536#0" />
+            <element signature="e#1713#1916#0" />
+            <element signature="e#1965#2047#0" />
+            <element signature="e#2093#3972#0" />
             <element signature="e#4347#5630#0" />
             <element signature="e#5704#5864#0" />
             <element signature="e#5937#6413#0" />
             <element signature="e#6454#6807#0" />
             <element signature="e#6844#6867#0" />
-            <element signature="e#8388#10013#0" />
-            <element signature="e#10058#11749#0" />
-            <element signature="e#11778#13142#0" />
           </folding>
         </state>
       </provider>
