@@ -2,9 +2,11 @@
 import sys
 import os
 from pathlib import Path
-import xlrd #installation: pip install xlrd
+#import xlrd #installation: pip install xlrd
 import json
 from collections import OrderedDict
+#from file_errors import *
+import file_errors as ferr #custom library containing all error processing related classes
 
 def printL (m):
 	if __name__ == '__main__':
@@ -18,6 +20,8 @@ class File:
 	file_type = 1 #1:text, 2:excel
 	file_delim = ','
 	lineList = []
+	_headers = []
+	_error = None  # FileErrors class reference holding all errors associated with the current row
 
 	def __init__(self, filepath, file_type = 1, file_delim = ','):
 		self.filepath = filepath
@@ -25,6 +29,27 @@ class File:
 		self.filename = Path(os.path.abspath(filepath)).name
 		self.file_type = file_type
 		self.file_delim = file_delim
+		#headers = self.GetHeaders() #self.GetRowByNumber(1).split(self.file_delim) #save header of the file to a list
+		self._error = ferr.FileError(self)
+		print('----------Init for file {}'.format(self.filename))
+
+	@property
+	def headers(self):
+		if not self._headers:
+			self.GetHeaders()
+		return self._headers
+
+	# @headers.setter
+	# def headers(self, value):
+	# 	self._headers = value
+
+	@property
+	def error(self):
+		return self._error
+
+	@error.setter
+	def error(self, value):
+		self._error = value
 
 	def GetFileContent (self):
 		if not self.lineList:
@@ -34,7 +59,9 @@ class File:
 		return self.lineList
 
 	def GetHeaders (self):
-		return self.GetRowByNumber (1)
+		if not self._headers:
+			self._headers = self.GetRowByNumber(1).split(self.file_delim)
+		return self._headers
 
 	def GetRowByNumber (self, rownum):
 		lineList = self.GetFileContent()
@@ -87,7 +114,7 @@ class ConfigFile(File):
 	def getItemByKey(self, item_key):
 		#check if config file was already loaded
 		if not self.config_items:
-			loadConfigSettings()
+			self.loadConfigSettings()
 		#check if requested key exists
 		#print('item_key = {}'.format(item_key))
 		#print('self.config_items.get(item_key, None) => {}'.format(self.config_items.get(item_key, None)))
@@ -101,7 +128,7 @@ class ConfigFile(File):
 
 	def getAllItems(self, item_key):
 		if not self.config_items:
-			loadConfigSettings()
+			self.loadConfigSettings()
 		return self.config_items
 
 #metadata text file class
@@ -122,18 +149,12 @@ class MetaFileText(File):
 
 		if not self.file_dict:
 			dict = eval(cfg.getItemByKey('dict_tmpl')) #{fields:[]}
-			#print('Dictionary Step1.0=> {}'.format(dict))
-			#print ('Dictionary Step2.0=> Field Structure:{}'.format(dict[fields][0]))
-			#print ('Dictionary Step2.1=>{}'.format({"description":"","encoding":"null","label":"","type":"varchar","name":""}))
 			fld_dict_tmp = dict[fields][0] #eval(cfg.getItemByKey('dict_field_tmpl'))
-			#print('Dictionary Step2.2=>Extracted Field Structure {}'.format(fld_dict_tmp))
 			dict[fields].clear()
-			#print('Dictionary Step1.1=>Cleared Dictionary {}'.format(dict))
 
 			if dict:
 				hdrs = self.GetRowByNumber(1).split(self.file_delim)
 				upd_flds = cfg.getItemByKey('dict_field_tmpl_update_fields').split(self.configValueListSeparator())
-				#print('upd_flds => {}'.format(upd_flds))
 
 				for hdr in hdrs:
 					fld_dict = fld_dict_tmp.copy()
@@ -149,20 +170,12 @@ class MetaFileText(File):
 		if sort:
 			#identify name of the field to apply sorting on the dictionary
 			if len(sort_by_field) == 0 or not sort_by_field in dict[fields][0]:
-				#print('cfg.getItemByKey("dict_field_sort_by") = {}'.format(cfg.getItemByKey('dict_field_sort_by')))
 				sort_by_field = cfg.getItemByKey('dict_field_sort_by')
-				#print('sort_by_field #2 ===>>>> {}'.format(len(sort_by_field)))
 				if len(sort_by_field)== 0:
 					sort_by_field = 'name' #hardcoded default
 
-			#print('sort_by_field = {}'.format(sort_by_field))
-
 			#apply sorting, if given field name present in the dictionary structure
 			if sort_by_field in dict[fields][0]:
-				#print('Inside SORT IF; sorting by {} ======>'.format(sort_by_field))
-				#print(dict[fields])
-				#print("name" in dict[fields][0])
-				#update fields element of dictionary with the sorted list of dictionaries
 				dict[fields] = sorted(dict[fields], key=lambda i: i[sort_by_field])
 
 		return dict
@@ -172,12 +185,14 @@ class MetaFileText(File):
 		return json.dumps(dict) #convert received dictionary to JSON
 
 	def getConfigInfo(self, cfg_file_name = 'config.cfg', wrkdir = ''):
+		# print('file name through Error object - beginning getConfigInfo() = {}'.format(self.error.entity.filepath))
 		if not self.cfg_file:
 			if wrkdir == "":
 				wrkdir = self.wrkdir
 			cfg_path = Path(wrkdir) / cfg_file_name
 			#print('cfg_path = {}'.format(cfg_path))
 			self.cfg_file = ConfigFile(cfg_path, 1)  # config file will use ':' by default
+		# print('file name through Error object - end getConfigInfo() = {}'.format(self.error.entity.filepath))
 		return self.cfg_file
 
 	def configValueListSeparator(self):
@@ -199,20 +214,24 @@ class MetaFileText(File):
 		hdrs = self.GetRowByNumber(1).split(self.file_delim) #get list of headers
 		lst_content = self.GetRowByNumber(rownum).split(self.file_delim) #get list of values contained by the row
 
+		# print('file name through Error object - getFileRow() - before Row instance = {}'.format(self.error.entity.filepath))
+
 		row = Row(self, rownum, lst_content, hdrs)
-		row.error = RowErrors(row)
+		# print('file name through Error object - getFileRow() - after Row instance = {}'.format(self.error.entity.filepath))
+		# print ('self.error.entity (before Row.error assignment) = {}'.format(self.error.entity))
+		row.error = ferr.RowErrors(row)
+		# print ('self.error.entity (after  Row.error assignment) = {}'.format(self.error.entity))
+		# print('file name through Error object - getFileRow() - after Row.error assignment = {}'.format(self.error.entity.filepath))
 
 		if len(hdrs) == len (lst_content):
 			self.validateMandatoryFieldsPerRow(row) # validate row for required fields being populated
-			#if row.error.errorsExist():
-				#print ('Errors for this row: {}'.format(row.error.getErrors()))
 
 			#create dictionary of the row, so it can be converted to JSON
 			for hdr, cnt in zip(hdrs, lst_content):
 				row.row_dict[hdr.strip()] = cnt.strip()
 		else:
 			row.row_dict = None
-			row.error.addError('Incorrect number of fields! The row contains {} field(s), while {} is expected.'.format(len (lst_content), len(hdrs)))
+			row.error.addError('Incorrect number of fields! The row contains {} field(s), while {} headers are present.'.format(len (lst_content), len(hdrs)))
 
 		return row #out_dict
 
@@ -225,18 +244,12 @@ class MetaFileText(File):
 		mandatFieldUsed = []
 		mandatFieldMissed = []
 
-		#print('------->>> mandatFields = {}, mandatMethod = "{}"'.format(mandatFields, mandatMethod))
-		
 		#validate every field of the row to make sure that all mandatory fields are populated
 		i = 0 #keeps field count
 		for hdr, cnt in zip(row.header, row.row_content):
-			# TODO: validate row for required fields
-			# row_dict[hdr.strip()] = cnt.strip()
-			# print ('hdr.strip() = {}, cng.strip() = {}'.format(hdr.strip(), cnt.strip()))
-			#row.row_dict[hdr.strip()] = cnt.strip()
 			i += 1
 			for mf in mandatFields:
-				#print('mf = {}'.format(mf))
+				#TODO create custom type to store possible values of mandatMethod
 				if mandatMethod == 'name':
 					chk_val = hdr.strip()
 				elif mandatMethod == 'number':
@@ -244,17 +257,15 @@ class MetaFileText(File):
 				else:
 					chk_val = None
 
-				#print ('chk_val = {}; mf = {}'.format(chk_val, mf))
-
 				if str(chk_val) == mf.strip():
-					#print ('chk_val was matched to mf!!!')
 					mandatFieldUsed.append(mf.strip())
 					if len(cnt.strip()) == 0:
 						#report error for mandatory field being empty
 						row.error.addError('Row #{}. Mandatory field "{}" (column #{}) has no value provided.'.format(row.row_number, hdr, i))
 						out_val +=1 #increase number of found errors
 
-		#print ('mandatFieldUsed =  {}'.format(mandatFieldUsed))
+		return out_val
+
 		#verify that all mandatory fields were present in the file
 		if len(mandatFields) != len(mandatFieldUsed):
 			for mf in mandatFields:
@@ -266,24 +277,76 @@ class MetaFileText(File):
 
 		return out_val
 
+	def validateMandatoryFieldsExist(self):
+		cfg = self.getConfigInfo()
+		delim = self.configValueListSeparator()
+		mandatFields = cfg.getItemByKey('file_row_mandatory_fields').split(delim)
+		mandatMethod = cfg.getItemByKey('file_row_mandatory_fields_id_method').split(delim)[0].strip()
+		out_val = 0  # keeps number of found validation errors
+		mandatFieldUsed = []
+		mandatFieldMissed = []
+		hdrs = self.headers #self.GetHeaders()
+		#print('>>>>>>>>>>>>>>>>>fileName through file object = {}'.format(self.filename))
+		err = self.error #reference to the FileError class of this file
+		#print('>>>>>>>>>>>>>>>>>fileName through error object = {}'.format(err.entity.filename))
+
+		i = 0  # keeps field count
+		for hdr in hdrs:
+			i += 1
+			for mf in mandatFields:
+				# TODO create custom type to store possible values of mandatMethod
+				if mandatMethod == 'name':
+					hdr_val = hdr.strip()
+				elif mandatMethod == 'number':
+					hdr_val = i
+				else:
+					hdr_val = None
+
+				if str(hdr_val) == mf.strip():
+					mandatFieldUsed.append(mf.strip())
+
+		if len(mandatFields) != len(mandatFieldUsed):
+			for mf in mandatFields:
+				#print ('mandatory field (by {}) = {}'.format(mandatMethod, mf))
+				if not mf.strip() in mandatFieldUsed:
+					mandatFieldMissed.append(mf.strip())
+			# report error for absent mandatory field
+			print('File ERROR reported!!!')
+			err.addError('File {}. Mandatory field {}(s): {} - was(were) not found in the file.'.format(self.filename, mandatMethod,','.join(mandatFieldMissed)))
+			print ('File Error Content: {}'.format(err.getErrorsToStr()))
+
+			#row.error.addError('File {}. Mandatory field {}(s): {} - was(were) not found in the file.'.format(self.filename, mandatMethod,','.join(mandatFieldMissed)))
+
+
 	def processFile(self):
+		# print('file name through Error object - inside processFile() before validateMandatoryFieldsExist = {}'.format(self.error.entity.filepath)) #self.file.error.entity.filepath
+		self.validateMandatoryFieldsExist()
+		# print('file name through Error object - inside processFile() after validateMandatoryFieldsExist = {}'.format(self.error.entity.filepath))
+
 		numRows = self.RowsCount()
 		for i in range(1, numRows):
 			row = self.getFileRow(i+1)
 			self.rows[row.row_number] = row #add Row class reference to the list of all rows
-
-			#print ('Row to JSON = {}'.format(row.toJSON()))
-			#print ('Errors in Row: {}'.format(row.error.getErrors()))
-			#er = row.error.getErrors()
-			#print (len(er['errors']))
-			#print(row.error.errorsExist())
 
 			if not row.error.errorsExist():
 				#TODO: Implement action to save good records to DB
 				print ('No Errors, Row Info: {}'.format (row.toJSON()))
 			else:
 				# TODO: Implement action to save error records to log files
-				print ('Errors Present: {}, Row Info: {}'.format(row.error.getErrors(), row.row_content))
+				#print ('Errors Present: {}, Row Info: {}'.format(row.error.getErrors(), row.row_content))
+				print ('Errors Present: {}, Row Info: {}'.format(row.error.getErrorsToStr(), row.row_content))
+
+		# summary of errors in file
+		print ('Summary of errors for file {}'.format(self.filename))
+		print('Summary of File level errors: {}'.format(self.error.getErrorsToStr()))
+		row_err_cnt = 0
+		for d in self.rows.values():
+			if (d.error.errorsExist()):
+				row_err_cnt += 1
+				print ('Row level error: {}'.format(d.error.getErrorsToStr()))
+		if row_err_cnt == 0:
+			print('No Row level errors found for this file!')
+
 
 	# it will submit given row to DB using config settings
 	def submitSampleToDB(self, row):
@@ -334,85 +397,6 @@ class Row ():
 		#print ('From withing toJSON - Dictionary source:{}'.format(self.row_dict))
 		return json.dumps(self.row_dict)
 
-class EntityErrors():
-	_entity = None #link to an object that these errors belongs to.
-	_errors = None
-
-	def __init__(self):
-		#self.entity = entity
-		#print ('Entity Row number From Entity Errors class: {}'.format(self.entity.row_number))
-		self._errors = []
-
-	@property
-	def entity(self):
-		return self._entity
-
-	@entity.setter
-	def entity(self, value):
-		self._entity = value
-
-	@property
-	def errors(self):
-		return self._errors
-
-	@errors.setter
-	def errors(self, value):
-		self._errors = value
-
-	def addError(self, error_desc, error_number = None):
-		#print ('Adding item to error list: {}'.format(error_desc))
-
-		error = {
-			'error_desc': error_desc,
-			'error_number': error_number
-		}
-		self._errors.append(error)
-
-	def errorsExist(self):
-		return (len(self._errors) > 0)
-
-	def getErrors(self):
-		error = {
-			#'entity': str(self.entity),
-			'errors': self.errors
-		}
-		return self.errors
-
-class FileError():
-	pass
-
-class RowErrors(EntityErrors):
-	row = None
-	#@errors = None
-
-	def __init__(self, row):
-		self.row = row
-		print ('row number from RowErrors class: {}'.format(row.row_number))
-		EntityErrors.__init__(self)
-		EntityErrors.entity = row
-		#r = EntityErrors.entity
-		#print ('row object id = {}, entity object id {}'.format(self.row, r))
-		#print('EntityErrors.row_number from RowErrors = {}'.format(r.row_number))
-		print('EntityErrors.row_number from RowErrors directly = {}'.format(EntityErrors.entity.row_number))
-
-
-	def getErrors(self):
-		#print('row_number = {}'.format(self.row.row_number))
-		#print('entity = {}'.format(EntityErrors.entity.row_number))
-		#print('row_number = {}'.format(EntityErrors.entity.row_number))
-		#errors = []
-		#errors = EntityErrors.errors
-		#for e in errors:
-		#	print ('--------Error item = {}'.format(e))
-		error = {
-			'file': str(EntityErrors.entity.file.filepath),
-			'row_number':EntityErrors.entity.row_number,
-			'row':EntityErrors.entity.row_content,
-			'header':EntityErrors.entity.header,
-			'errors': EntityErrors.getErrors(self)
-		}
-		return error
-
 
 
 #if executed by itself, do the following
@@ -453,7 +437,7 @@ if __name__ == '__main__':
 	#fl.readFileLineByLine()
 
 	printL (fl.GetFileContent())
-	printL('Headers===> {}'.format(fl.GetHeaders()))
+	printL('Headers===> {}'.format(fl.headers)) #GetHeaders()
 	printL(fl.GetRowByNumber(3))
 	printL (fl.GetRowByNumber(2))
 	printL(fl.GetRowByNumber(1))
@@ -470,11 +454,14 @@ if __name__ == '__main__':
 
 	#read metafile #1
 	file_to_open = data_folder / "test1.txt"
-	fl = MetaFileText(file_to_open)
-	print ('Testing "getFileRow (row_dict)" => {}'.format(fl.getFileRow(2).row_dict))
-	print ('Testing "getFileRow.toJSON" => {}'.format(fl.getFileRow(2).toJSON()))
-	print('Process metafile: {}'.format(fl.filename))
-	fl.processFile()
+	fl1 = MetaFileText(file_to_open)
+	#print('file name through Error object = {}'.format(fl1.error.entity.filepath))
+	#print(isinstance(fl1.error.entity, MetaFileText), isinstance(fl1.error.entity, ConfigFile))
+	#print ('Testing "getFileRow (row_dict)" => {}'.format(fl1.getFileRow(2).row_dict))
+	#print ('Testing "getFileRow.toJSON" => {}'.format(fl1.getFileRow(2).toJSON()))
+	#print(isinstance(fl1.error.entity, MetaFileText), isinstance(fl1.error.entity, ConfigFile))
+	print('Process metafile: {}'.format(fl1.filename))
+	fl1.processFile()
 
 	#sys.exit()
 
