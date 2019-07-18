@@ -16,14 +16,6 @@ class FieldIdMethod:
 	name = field_id_methods[0]
 	number = field_id_methods[1]
 
-	# @property
-	# def name(self):
-	# 	return self.field_id_methods[0]
-	#
-	# @property
-	# def number(self):
-	# 	return self.field_id_methods[1]
-
 #Text file class (used as a base)
 class File:
 	filepath = ''
@@ -32,9 +24,9 @@ class File:
 	file_type = 1 #1:text, 2:excel
 	file_delim = ','
 	lineList = []
-	_headers = []
-	_error = None  # FileErrors class reference holding all errors associated with the current row
-	_sample_id_field_names = []
+	__headers = []
+	__error = None  # FileErrors class reference holding all errors associated with the current row
+	__sample_id_field_names = []
 
 	def __init__(self, filepath, file_type = 1, file_delim = ','):
 		self.filepath = filepath
@@ -42,58 +34,58 @@ class File:
 		self.filename = Path(os.path.abspath(filepath)).name
 		self.file_type = file_type
 		self.file_delim = file_delim
-		#headers = self.GetHeaders() #self.GetRowByNumber(1).split(self.file_delim) #save header of the file to a list
-		self._error = ferr.FileError(self)
+		#headers = self.getHeaders() #self.getRowByNumber(1).split(self.file_delim) #save header of the file to a list
+		self.__error = ferr.FileError(self)
 		print('----------Init for file {}'.format(self.filename))
 
 	@property
 	def headers(self):
-		if not self._headers:
-			self.GetHeaders()
-		return self._headers
+		if not self.__headers:
+			self.getHeaders()
+		return self.__headers
 
 	# @headers.setter
 	# def headers(self, value):
-	# 	self._headers = value
+	# 	self.__headers = value
 
 	@property
 	def error(self):
-		return self._error
+		return self.__error
 
 	@error.setter
 	def error(self, value):
-		self._error = value
+		self.__error = value
 
 	@property
 	def sample_id_field_names(self):
-		return self._sample_id_field_names
+		return self.__sample_id_field_names
 
 	@sample_id_field_names.setter
 	def sample_id_field_names(self, value):
-		self._sample_id_field_names = value
+		self.__sample_id_field_names = value
 
-	def GetFileContent (self):
+	def getFileContent (self):
 		if not self.lineList:
 			fl = open(self.filepath, "r")
 			self.lineList = [line.rstrip('\n') for line in fl]
 			fl.close()
 		return self.lineList
 
-	def GetHeaders (self):
-		if not self._headers:
-			self._headers = self.GetRowByNumber(1).split(self.file_delim)
-		return self._headers
+	def getHeaders (self):
+		if not self.__headers:
+			self.__headers = self.getRowByNumber(1).split(self.file_delim)
+		return self.__headers
 
-	def GetRowByNumber (self, rownum):
-		lineList = self.GetFileContent()
+	def getRowByNumber (self, rownum):
+		lineList = self.getFileContent()
 		#check that requested row is withing available records of the file and >0
 		if len(lineList) >= rownum and rownum > 0:
 			return lineList[rownum-1]
 		else:
 			return ""
 
-	def RowsCount(self, excludeHeader = False):
-		num = len(self.GetFileContent())
+	def rowsCount(self, excludeHeader = False):
+		num = len(self.getFileContent())
 		if excludeHeader:
 			num = num - 1
 		return num
@@ -116,7 +108,7 @@ class ConfigFile(File):
 	#any text after "##" will be considered a comment and will be ignored
 	def loadConfigSettings(self):
 		if not self.config_items_populated:
-			lns = File.GetFileContent(self)
+			lns = File.getFileContent(self)
 
 			for l in lns:
 				#values = l.split(self.file_delim, 1) #use only first delimiter - deprecated code
@@ -174,7 +166,7 @@ class MetaFileText(File):
 			dict[fields].clear()
 
 			if dict:
-				hdrs = self.GetRowByNumber(1).split(self.file_delim)
+				hdrs = self.getRowByNumber(1).split(self.file_delim)
 				upd_flds = cfg.getItemByKey('dict_field_tmpl_update_fields').split(self.configValueListSeparator())
 
 				for hdr in hdrs:
@@ -232,8 +224,8 @@ class MetaFileText(File):
 
 		out_dict = {'row':{},'error':None}
 
-		hdrs = self.GetRowByNumber(1).split(self.file_delim) #get list of headers
-		lst_content = self.GetRowByNumber(rownum).split(self.file_delim) #get list of values contained by the row
+		hdrs = self.getRowByNumber(1).split(self.file_delim) #get list of headers
+		lst_content = self.getRowByNumber(rownum).split(self.file_delim) #get list of values contained by the row
 
 		# print('file name through Error object - getFileRow() - before Row instance = {}'.format(self.error.entity.filepath))
 
@@ -317,7 +309,7 @@ class MetaFileText(File):
 		self._verify_id_method(mandatMethod, 'file_row_mandatory_fields_id_method')
 		self._verify_field_id_type_vs_method(mandatMethod, mandatFields, 'file_row_mandatory_fields')
 
-		hdrs = self.headers #self.GetHeaders()
+		hdrs = self.headers #self.getHeaders()
 		#print('>>>>>>>>>>>>>>>>>fileName through file object = {}'.format(self.filename))
 		err = self.error #reference to the FileError class of this file
 		#print('>>>>>>>>>>>>>>>>>fileName through error object = {}'.format(err.entity.filename))
@@ -356,7 +348,7 @@ class MetaFileText(File):
 		samlpeIdFieldUsed = []
 		samlpeIdFieldMissed = []
 
-		hdrs = self.headers # self.GetHeaders()
+		hdrs = self.headers # self.getHeaders()
 		err = self.error # reference to the FileError class of this file
 
 		self._verify_id_method(sampleIdMethod, 'sample_id_method')
@@ -395,7 +387,7 @@ class MetaFileText(File):
 			print ('File Error Content: {}'.format(self.error.getErrorsToStr()))
 		# print('file name through Error object - inside processFile() after validateMandatoryFieldsExist = {}'.format(self.error.entity.filepath))
 
-		numRows = self.RowsCount()
+		numRows = self.rowsCount()
 		for i in range(1, numRows):
 			row = self.getFileRow(i+1)
 			self.rows[row.row_number] = row #add Row class reference to the list of all rows
@@ -431,8 +423,8 @@ class Row ():
 	row_content = [] #list of values from a file for this row
 	_row_dict = None #OrderedDict()
 	header = [] #list of values from a file for the first row (headers)
-	_error = None #RowErrors class reference holding all errors associated with the current row
-	_sample_id = None #it stores a sample Id value for the row.
+	__error = None #RowErrors class reference holding all errors associated with the current row
+	__sample_id = None #it stores a sample Id value for the row.
 
 	def __init__(self, file, row_num, row_content, header):
 		self.file = file
@@ -443,11 +435,11 @@ class Row ():
 
 	@property
 	def samlpe_id(self):
-		return self._sample_id
+		return self.__sample_id
 
 	@samlpe_id.setter
 	def row_dict(self, value):
-		self._sample_id = value
+		self.__sample_id = value
 
 	@property
 	def row_dict (self):
@@ -459,11 +451,11 @@ class Row ():
 
 	@property
 	def error(self):
-		return self._error
+		return self.__error
 
 	@error.setter
 	def error(self, value):
-		self._error = value
+		self.__error = value
 
 	def toJSON(self):
 		#print ('From withing toJSON - Dictionary source:{}'.format(self.row_dict))
@@ -508,11 +500,11 @@ if __name__ == '__main__':
 
 	#fl.readFileLineByLine()
 
-	printL (fl.GetFileContent())
-	printL('Headers===> {}'.format(fl.headers)) #GetHeaders()
-	printL(fl.GetRowByNumber(3))
-	printL (fl.GetRowByNumber(2))
-	printL(fl.GetRowByNumber(1))
+	printL (fl.getFileContent())
+	printL('Headers===> {}'.format(fl.headers)) #getHeaders()
+	printL(fl.getRowByNumber(3))
+	printL (fl.getRowByNumber(2))
+	printL(fl.getRowByNumber(1))
 
 
 	#read config file
