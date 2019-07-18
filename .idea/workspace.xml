@@ -1,27 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="BookmarkManager">
-    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="243" mnemonic="1" />
-    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="37" mnemonic="9" />
-    <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="98" mnemonic="4" />
-    <bookmark url="file://$PROJECT_DIR$/process_file.py" line="371" mnemonic="2" />
-    <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="28" mnemonic="A" />
-    <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="36" mnemonic="B" />
-    <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="84" mnemonic="C" />
-    <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="89" mnemonic="D" />
-    <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="72" mnemonic="F" />
-    <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="119" mnemonic="G" />
-    <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="135" mnemonic="H" />
-    <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="141" mnemonic="I" />
-    <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="121" mnemonic="J" />
-    <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="75" mnemonic="E" />
-    <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="153" />
-    <bookmark url="file://$PROJECT_DIR$/file_errors.py" line="105" />
-  </component>
   <component name="ChangeListManager">
-    <list default="true" id="b6d3ca2d-8b0c-4618-8953-fcbcfccf6430" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/file_errors.py" beforeDir="false" afterPath="$PROJECT_DIR$/file_errors.py" afterDir="false" />
+    <list default="true" id="b6d3ca2d-8b0c-4618-8953-fcbcfccf6430" name="Default Changelist" comment="Adds pycharm project and installs xlrd and pyodbc packages into the current venv">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/process_file.py" beforeDir="false" afterPath="$PROJECT_DIR$/process_file.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/study01/config.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/study01/config.cfg" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -30,36 +13,51 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="FileEditorManager">
-    <leaf>
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/process_file.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="333">
-              <caret line="86" column="10" lean-forward="true" selection-start-line="86" selection-start-column="10" selection-end-line="86" selection-end-column="10" />
+            <state relative-caret-position="322">
+              <caret line="560" column="8" selection-start-line="560" selection-start-column="8" selection-end-line="560" selection-end-column="8" />
               <folding>
                 <element signature="e#0#13#0" expanded="true" />
-                <element signature="e#1278#1296#0" />
-                <element signature="e#1340#1359#0" />
-                <element signature="e#1407#1441#0" />
-                <element signature="e#1459#1478#0" />
-                <element signature="e#1391#1536#0" />
-                <element signature="e#1713#1916#0" />
-                <element signature="e#1965#2047#0" />
-                <element signature="e#4347#5630#0" />
-                <element signature="e#5704#5864#0" />
-                <element signature="e#5937#6413#0" />
-                <element signature="e#6454#6807#0" />
-                <element signature="e#6844#6867#0" />
+                <element signature="e#467#2374#0" />
+                <element signature="e#2420#4299#0" />
+                <element signature="e#4674#5957#0" />
+                <element signature="e#6264#6740#0" />
+                <element signature="e#6781#7134#0" />
+                <element signature="e#8717#9979#0" />
+                <element signature="e#9907#10214#0" />
+                <element signature="e#10314#10729#0" />
+                <element signature="e#10825#11939#0" />
+                <element signature="e#12794#14158#0" />
+                <element signature="e#13636#15132#0" />
+                <element signature="e#15181#16545#0" />
+                <element signature="e#15754#15778#0" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/study01/config.cfg">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="204">
+              <caret line="12" column="49" selection-start-line="12" selection-start-column="49" selection-end-line="12" selection-end-column="49" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/study01/test1.txt">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/file_errors.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-805">
-              <caret line="69" selection-start-line="69" selection-end-line="69" />
+            <state relative-caret-position="17">
+              <caret line="105" column="4" selection-start-line="105" selection-start-column="4" selection-end-line="116" selection-end-column="20" />
             </state>
           </provider>
         </entry>
@@ -75,7 +73,17 @@
       <find>entity</find>
       <find>ferr</find>
       <find>Get</find>
+      <find>mandatory_fields_id_method</find>
+      <find>FieldIdMethod</find>
+      <find>mandatMethod</find>
+      <find>mandatFields</find>
+      <find>toSTR</find>
     </findStrings>
+    <replaceStrings>
+      <replace>mandatory_fields_method</replace>
+      <replace>method</replace>
+      <replace>fields</replace>
+    </replaceStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -89,15 +97,16 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/file_errors.py" />
+        <option value="$PROJECT_DIR$/study01/config.cfg" />
         <option value="$PROJECT_DIR$/process_file.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="240" />
-    <option name="y" value="130" />
-    <option name="width" value="1440" />
-    <option name="height" value="780" />
+    <option name="x" value="360" />
+    <option name="y" value="195" />
+    <option name="width" value="2160" />
+    <option name="height" value="1170" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -111,6 +120,11 @@
             <path>
               <item name="MountSinai_metadata_file_loader" type="b2602c69:ProjectViewProjectNode" />
               <item name="MountSinai_metadata_file_loader" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="MountSinai_metadata_file_loader" type="b2602c69:ProjectViewProjectNode" />
+              <item name="MountSinai_metadata_file_loader" type="462c0819:PsiDirectoryNode" />
+              <item name="study01" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -189,25 +203,25 @@
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info id="Favorites" side_tool="true" />
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.124200426" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.11247335" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
-      <window_info anchor="bottom" id="Version Control" weight="0.32936078" />
-      <window_info anchor="bottom" id="Python Console" />
-      <window_info anchor="bottom" id="Terminal" />
-      <window_info anchor="bottom" id="Event Log" sideWeight="0.50053304" side_tool="true" weight="0.32936078" />
+      <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32936078" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49946696" weight="0.14842904" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.33044422" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49946696" visible="true" weight="0.3033586" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.21451788" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="right" id="R Packages" />
-      <window_info anchor="right" id="R Graphics" />
+      <window_info anchor="bottom" id="Version Control" order="7" weight="0.32936078" />
+      <window_info anchor="bottom" id="Terminal" order="8" />
+      <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.50053304" side_tool="true" weight="0.32936078" />
+      <window_info anchor="bottom" id="Python Console" order="10" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="right" id="R Graphics" order="3" />
+      <window_info anchor="right" id="R Packages" order="4" />
     </layout>
   </component>
   <component name="VcsManagerConfiguration">
@@ -232,6 +246,16 @@
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="evaluateExpression">
+      <expression>
+        <expression-string>sid.replace ('{{{{{}}}}}'.format(str(smp_val)), cnt)</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>'---------------&gt;&gt;&gt;&gt;{{{{{}}}}}'.format(str(smp_val)), cnt</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
       <expression>
         <expression-string>EntityErrors.entity</expression-string>
         <language-id>Python</language-id>
@@ -272,31 +296,49 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://C:/Python37/Lib/pathlib.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="196">
+          <caret line="991" selection-start-line="991" selection-end-line="991" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/study01/config.cfg">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="204">
+          <caret line="12" column="49" selection-start-line="12" selection-start-column="49" selection-end-line="12" selection-end-column="49" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/study01/test1.txt">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
     <entry file="file://$PROJECT_DIR$/file_errors.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-805">
-          <caret line="69" selection-start-line="69" selection-end-line="69" />
+        <state relative-caret-position="17">
+          <caret line="105" column="4" selection-start-line="105" selection-start-column="4" selection-end-line="116" selection-end-column="20" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/process_file.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="333">
-          <caret line="86" column="10" lean-forward="true" selection-start-line="86" selection-start-column="10" selection-end-line="86" selection-end-column="10" />
+        <state relative-caret-position="322">
+          <caret line="560" column="8" selection-start-line="560" selection-start-column="8" selection-end-line="560" selection-end-column="8" />
           <folding>
             <element signature="e#0#13#0" expanded="true" />
-            <element signature="e#1278#1296#0" />
-            <element signature="e#1340#1359#0" />
-            <element signature="e#1407#1441#0" />
-            <element signature="e#1459#1478#0" />
-            <element signature="e#1391#1536#0" />
-            <element signature="e#1713#1916#0" />
-            <element signature="e#1965#2047#0" />
-            <element signature="e#4347#5630#0" />
-            <element signature="e#5704#5864#0" />
-            <element signature="e#5937#6413#0" />
-            <element signature="e#6454#6807#0" />
-            <element signature="e#6844#6867#0" />
+            <element signature="e#467#2374#0" />
+            <element signature="e#2420#4299#0" />
+            <element signature="e#4674#5957#0" />
+            <element signature="e#6264#6740#0" />
+            <element signature="e#6781#7134#0" />
+            <element signature="e#8717#9979#0" />
+            <element signature="e#9907#10214#0" />
+            <element signature="e#10314#10729#0" />
+            <element signature="e#10825#11939#0" />
+            <element signature="e#12794#14158#0" />
+            <element signature="e#13636#15132#0" />
+            <element signature="e#15181#16545#0" />
+            <element signature="e#15754#15778#0" />
           </folding>
         </state>
       </provider>

@@ -242,6 +242,9 @@ class MetaFileText(File):
 			#create dictionary of the row, so it can be converted to JSON
 			for hdr, cnt in zip(hdrs, lst_content):
 				row.row_dict[hdr.strip()] = cnt.strip()
+
+			#set sample id for the row
+			row.assignSampleId()
 		else:
 			row.row_dict = None
 			row.error.addError('Incorrect number of fields! The row contains {} field(s), while {} headers are present.'.format(len (lst_content), len(hdrs)))
@@ -251,18 +254,18 @@ class MetaFileText(File):
 	def _validateMandatoryFieldsPerRow(self, row):
 		cfg = self.getConfigInfo()
 		delim = self.configValueListSeparator()
-		mandatFields = cfg.getItemByKey('file_row_mandatory_fields').split(delim)
-		mandatMethod = cfg.getItemByKey('file_row_mandatory_fields_id_method').split(delim)[0].strip()
+		mandatFields = cfg.getItemByKey('mandatory_fields').split(delim)
+		mandatMethod = cfg.getItemByKey('mandatory_fields_method').split(delim)[0].strip()
 		out_val = 0 #keeps number of found validation errors
-		mandatFieldUsed = []
-		mandatFieldMissed = []
+		# mandatFieldUsed = []
 
 		#validate every field of the row to make sure that all mandatory fields are populated
 		i = 0 #keeps field count
 		for hdr, cnt in zip(row.header, row.row_content):
 			i += 1
+			# identify appropriate mandatory field (mf) for the current header field (hdr)
 			for mf in mandatFields:
-				#TODO create custom type to store possible values of mandatMethod
+				# identify comparision method
 				if mandatMethod == 'name':
 					chk_val = hdr.strip()
 				elif mandatMethod == 'number':
@@ -270,14 +273,15 @@ class MetaFileText(File):
 				else:
 					chk_val = None
 
+				# proceed if header is matching mandatory field
 				if str(chk_val) == mf.strip():
-					mandatFieldUsed.append(mf.strip())
+					# validate if the value of the field for the current row is blank and report error if so
 					if len(cnt.strip()) == 0:
-						#report error for mandatory field being empty
+						out_val += 1  # increase number of found errors
+						# report error for mandatory field being empty
 						row.error.addError('Row #{}. Mandatory field "{}" (column #{}) has no value provided.'.format(row.row_number, hdr, i))
-						out_val +=1 #increase number of found errors
 
-		return out_val
+		return out_val # return count found validation error
 
 	def _verify_id_method (self, method, process_verified_desc = 'Unknown'):
 		if not method in FieldIdMethod.field_id_methods:
@@ -296,29 +300,100 @@ class MetaFileText(File):
 							'Configuration issue - provided value "{}" for a field number of "{}" is not numeric while the declared method is "{}".'
 							.format(f, process_verified_desc, method))
 
+	def _validate_fields_vs_headers (self, fields_to_check, field_id_method, fields_to_check_param, field_id_method_param):
+		fields = fields_to_check
+		method = field_id_method
+		fieldUsed = []
+		fieldMissed = []
+
+		self._verify_id_method(method, fields_to_check_param) # check that provided methods exist
+		self._verify_field_id_type_vs_method(method, fields, field_id_method_param) # check field ids vs method
+
+		hdrs = self.headers  # self.getHeaders()
+
+		i = 0  # keeps field count
+		for hdr in hdrs:
+			i += 1
+			for mf in fields:
+				# check method
+				if method == FieldIdMethod.name:  # 'name':
+					hdr_val = hdr.strip()
+				elif method == FieldIdMethod.number:  # 'number':
+					hdr_val = i
+				else:
+					hdr_val = None
+
+				if str(hdr_val) == mf.strip():
+					fieldUsed.append(mf.strip())
+
+		if len(fields) != len(fieldUsed): #if not all fields from the list were matched to header
+			for mf in fields:
+				# print ('mandatory field (by {}) = {}'.format(method, mf))
+				if not mf.strip() in fieldUsed:
+					fieldMissed.append(mf.strip())
+		return fieldMissed
 
 	def _validateMandatoryFieldsExist(self):
 		cfg = self.getConfigInfo()
 		delim = self.configValueListSeparator()
-		mandatFields = cfg.getItemByKey('file_row_mandatory_fields').split(delim)
-		mandatMethod = cfg.getItemByKey('file_row_mandatory_fields_id_method').split(delim)[0].strip()
+
+		# names of config parameters to get config values
+		fields_param_name = 'mandatory_fields'
+		method_param_name = 'mandatory_fields_method'
+
+		# retrieve config values
+		fields = cfg.getItemByKey(fields_param_name).split(delim)
+		method = cfg.getItemByKey(method_param_name).split(delim)[0].strip()
+
+		# validated fields against headers of the metafile
+		fieldMissed = self._validate_fields_vs_headers(
+			fields, method, fields_param_name, method_param_name)
+
+		if fieldMissed:
+			# report error for absent mandatory field
+			self.error.addError('File {}. Mandatory field {}(s): {} - was(were) not found in the file.'
+								.format(self.filename, method,','.join(fieldMissed)))
+			# print('File ERROR reported!!!')
+			# print ('File Error Content: {}'.format(err.getErrorsToStr()))
+
+	def _validateSampleIDFields(self):
+		cfg = self.getConfigInfo()
+		delim = self.configValueListSeparator()
+
+		# names of config parameters to get config values
+		fields_param_name = 'sample_id_fields'
+		method_param_name = 'sample_id_method'
+
+		# retrieve config values
+		fields = cfg.getItemByKey(fields_param_name).split(delim)
+		method = cfg.getItemByKey(method_param_name).split(delim)[0].strip()
+
+		# validated fields against headers of the metafile
+		fieldMissed = self._validate_fields_vs_headers(
+			fields, method, fields_param_name, method_param_name)
+
+		if fieldMissed:
+			self.error.addError('File {}. Sample ID field {}(s): {} - was(were) not found in the file.'.format(self.filename, method,','.join(fieldMissed)))
+
+	def _validateMandatoryFieldsExist_todelete(self):
+		cfg = self.getConfigInfo()
+		delim = self.configValueListSeparator()
+		mandatFields = cfg.getItemByKey('mandatory_fields').split(delim)
+		mandatMethod = cfg.getItemByKey('mandatory_fields_method').split(delim)[0].strip()
 		#out_val = 0  # keeps number of found validation errors
 		mandatFieldUsed = []
 		mandatFieldMissed = []
 
-		self._verify_id_method(mandatMethod, 'file_row_mandatory_fields_id_method')
-		self._verify_field_id_type_vs_method(mandatMethod, mandatFields, 'file_row_mandatory_fields')
+		self._verify_id_method(mandatMethod, 'mandatory_fields_method')
+		self._verify_field_id_type_vs_method(mandatMethod, mandatFields, 'mandatory_fields')
 
 		hdrs = self.headers #self.getHeaders()
-		#print('>>>>>>>>>>>>>>>>>fileName through file object = {}'.format(self.filename))
 		err = self.error #reference to the FileError class of this file
-		#print('>>>>>>>>>>>>>>>>>fileName through error object = {}'.format(err.entity.filename))
 
 		i = 0  # keeps field count
 		for hdr in hdrs:
 			i += 1
 			for mf in mandatFields:
-				# TODO create custom type to store possible values of mandatMethod
 				#check mandatory fields
 				if mandatMethod == FieldIdMethod.name:  # 'name':
 					hdr_val = hdr.strip()
@@ -340,7 +415,7 @@ class MetaFileText(File):
 			err.addError('File {}. Mandatory field {}(s): {} - was(were) not found in the file.'.format(self.filename, mandatMethod,','.join(mandatFieldMissed)))
 			# print ('File Error Content: {}'.format(err.getErrorsToStr()))
 
-	def _validateSampleIDFields(self):
+	def _validateSampleIDFields_todelete(self):
 		cfg = self.getConfigInfo()
 		delim = self.configValueListSeparator()
 		sampleIdFields = cfg.getItemByKey('sample_id_fields').split(delim)
@@ -394,7 +469,7 @@ class MetaFileText(File):
 
 			if not row.error.errorsExist():
 				#TODO: Implement action to save good records to DB
-				print ('No Errors, Row Info: {}'.format (row.toJSON()))
+				print ('No Errors, Row Info: {}'.format (row.toStr()))
 			else:
 				# TODO: Implement action to save error records to log files
 				#print ('Errors Present: {}, Row Info: {}'.format(row.error.getErrors(), row.row_content))
@@ -421,7 +496,7 @@ class Row ():
 	file = None #reference to the file object that this row belongs to
 	row_number = None #row number - header = row #1, next line #2, etc.
 	row_content = [] #list of values from a file for this row
-	_row_dict = None #OrderedDict()
+	_row_dict = None #OrderedDict() of a headers
 	header = [] #list of values from a file for the first row (headers)
 	__error = None #RowErrors class reference holding all errors associated with the current row
 	__sample_id = None #it stores a sample Id value for the row.
@@ -434,11 +509,11 @@ class Row ():
 		self.row_dict = OrderedDict()
 
 	@property
-	def samlpe_id(self):
+	def sample_id(self):
 		return self.__sample_id
 
-	@samlpe_id.setter
-	def row_dict(self, value):
+	@sample_id.setter
+	def sample_id(self, value):
 		self.__sample_id = value
 
 	@property
@@ -460,6 +535,54 @@ class Row ():
 	def toJSON(self):
 		#print ('From withing toJSON - Dictionary source:{}'.format(self.row_dict))
 		return json.dumps(self.row_dict)
+
+	def toStr(self):
+		row = {
+			'file':str(self.file.filepath),
+			'row_number':self.row_number,
+			'sample_id':self.sample_id,
+			'row_JSON':self.toJSON(),
+			'errors': self.error
+		}
+		return row
+
+	def assignSampleId(self):
+		cfg = self.file.getConfigInfo()
+		delim = self.file.configValueListSeparator()
+
+		# retrieve config values for sample id retrieval
+		sid = cfg.getItemByKey('sample_id_expression')
+		fields = cfg.getItemByKey('sample_id_fields').split(delim)
+		method = cfg.getItemByKey('sample_id_method').split(delim)[0].strip()
+
+		print('sid = {}'.format(sid))
+
+		# hdrs = self.header # get headers to be used
+		# cnt = self.row_content #get content of the row to be used
+		# samlpeIdFields = OrderedDict()
+
+		for sf in fields:
+			i = 0  # keeps field count
+			for hdr, cnt in zip(self.header, self.row_content):
+			# for hdr in hdrs:
+				i += 1
+				# check sample_id fields
+				if method == FieldIdMethod.name:  # self.field_id_methods[0]: # 'name':
+					smp_val = hdr.strip()
+				elif method == FieldIdMethod.number: # self.field_id_methods[1]: # 'number':
+					smp_val = i
+				else:
+					smp_val = None
+
+				if str(smp_val) == sf.strip():
+					# save sample Id value to a dictionary
+					# samlpeIdFields[str(smp_val)] = cnt
+
+					sid = sid.replace('{{{}}}'.format(str(smp_val)), cnt)
+					# print('sid = {}'.format(sid))
+
+		self.__sample_id = eval(sid)
+		return self.__sample_id
 
 
 
@@ -519,15 +642,8 @@ if __name__ == '__main__':
 	#read metafile #1
 	file_to_open = data_folder / "test1.txt"
 	fl1 = MetaFileText(file_to_open)
-	#print('file name through Error object = {}'.format(fl1.error.entity.filepath))
-	#print(isinstance(fl1.error.entity, MetaFileText), isinstance(fl1.error.entity, ConfigFile))
-	#print ('Testing "getFileRow (row_dict)" => {}'.format(fl1.getFileRow(2).row_dict))
-	#print ('Testing "getFileRow.toJSON" => {}'.format(fl1.getFileRow(2).toJSON()))
-	#print(isinstance(fl1.error.entity, MetaFileText), isinstance(fl1.error.entity, ConfigFile))
 	print('Process metafile: {}'.format(fl1.filename))
 	fl1.processFile()
-
-	# sys.exit()
 
 	# read metafile #2
 	file_to_open = data_folder / "test2.txt"
