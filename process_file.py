@@ -48,26 +48,6 @@ class File:
 			self.getHeaders()
 		return self.__headers
 
-	# @headers.setter
-	# def headers(self, value):
-	# 	self.__headers = value
-
-	# @property
-	# def error(self):
-	# 	return self.__error
-	#
-	# @error.setter
-	# def error(self, value):
-	# 	self.__error = value
-
-	# @property
-	# def sample_id_field_names(self):
-	# 	return self.__sample_id_field_names
-	#
-	# @sample_id_field_names.setter
-	# def sample_id_field_names(self, value):
-	# 	self.__sample_id_field_names = value
-
 	def getFileContent (self):
 		if not self.lineList:
 			fl = open(self.filepath, "r")
@@ -133,14 +113,9 @@ class ConfigFile(File):
 		if not self.config_items:
 			self.loadConfigSettings()
 		#check if requested key exists
-		#print('item_key = {}'.format(item_key))
-		#print('self.config_items.get(item_key, None) => {}'.format(self.config_items.get(item_key, None)))
-		#print('item_key in self.config_items = {}'.format(item_key in self.config_items))
 		if item_key in self.config_items:
-			#print('Item Exists')
 			return self.config_items[item_key]
 		else:
-			#print('Item Does Not Exist')
 			return None
 
 	def getAllItems(self, item_key):
@@ -239,11 +214,7 @@ class MetaFileText(File):
 		# print('file name through Error object - getFileRow() - before Row instance = {}'.format(self.error.entity.filepath))
 
 		row = Row(self, rownum, lst_content, hdrs)
-		# print('file name through Error object - getFileRow() - after Row instance = {}'.format(self.error.entity.filepath))
-		# print ('self.error.entity (before Row.error assignment) = {}'.format(self.error.entity))
 		row.error = ferr.RowErrors(row)
-		# print ('self.error.entity (after  Row.error assignment) = {}'.format(self.error.entity))
-		# print('file name through Error object - getFileRow() - after Row.error assignment = {}'.format(self.error.entity.filepath))
 
 		if len(hdrs) == len (lst_content):
 			self._validateMandatoryFieldsPerRow(row) # validate row for required fields being populated
@@ -372,8 +343,6 @@ class MetaFileText(File):
 			# report error for absent mandatory field
 			self.error.addError('File {}. Mandatory field {}(s): {} - was(were) not found in the file.'
 								.format(self.filename, method,','.join(fieldMissed)))
-			# print('File ERROR reported!!!')
-			# print ('File Error Content: {}'.format(err.getErrorsToStr()))
 
 	def _validateSampleIDFields(self):
 		cfg = self.getConfigInfo()
@@ -404,7 +373,6 @@ class MetaFileText(File):
 									.format(','.join(fieldMissed2), expr_str))
 
 	def processFile(self):
-		# print('file name through Error object - inside processFile() before validateMandatoryFieldsExist = {}'.format(self.error.entity.filepath)) #self.file.error.entity.filepath
 		#validate file for "file" level errors
 		self._validateMandatoryFieldsExist()
 		self._validateSampleIDFields()
@@ -414,6 +382,7 @@ class MetaFileText(File):
 			print('=====>>>> File ERROR reported!!!')
 			print ('File Error Content: {}'.format(self.error.getErrorsToStr()))
 		else:
+			#proceed with processing file if no file-level errors were found
 			numRows = self.rowsCount()
 			for i in range(1, numRows):
 				row = self.getFileRow(i+1)
@@ -495,7 +464,7 @@ class Row ():
 			'row_number':self.row_number,
 			'sample_id':self.sample_id,
 			'row_JSON':self.toJSON(),
-			'errors': self.error
+			'errors': self.error.errors
 		}
 		return row
 
@@ -507,8 +476,6 @@ class Row ():
 		sid = cfg.getItemByKey('sample_id_expression').strip()
 		fields = cfg.getItemByKey('sample_id_fields').split(delim)
 		method = cfg.getItemByKey('sample_id_method').strip() #split(delim)[0].
-
-		#print('sid = {}'.format(sid))
 
 		for sf in fields:
 			i = 0  # keeps field count
@@ -524,19 +491,15 @@ class Row ():
 
 				if str(smp_val) == sf.strip():
 					sid = sid.replace('{{{}}}'.format(str(smp_val)), cnt)
-					# print('sid = {}'.format(sid))
 		try:
-			self.__sample_id = eval(sid)
+			self.__sample_id = eval(sid) # attempt to evaluate expression for sample id
 		except Exception as ex:
+			# report an error if evaluation has failed.
 			self.error.addError('Error "{}" occurred during evaluating sample id expression: {}\n{} '.format(ex, sid, traceback.format_exc()))
 			# print(sys.exc_info()[1])
 			# print(traceback.format_exc())
 
-			# print(sys.exc_info()[2])
-
 		return self.__sample_id
-
-
 
 #if executed by itself, do the following
 if __name__ == '__main__':
