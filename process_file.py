@@ -7,6 +7,7 @@ import xlrd #installation: pip install xlrd
 import json
 from collections import OrderedDict
 import file_errors as ferr #custom library containing all error processing related classes
+import pyodbc
 
 def printL (m):
 	if __name__ == '__main__':
@@ -129,8 +130,9 @@ class MetaFileText(File):
 	file_dict = None # OrderedDict()
 	rows = None # OrderedDict()
 
-	def __init__(self, filepath, file_type = 1, file_delim = ','):
+	def __init__(self, filepath, cfg_filepath = '', file_type = 1, file_delim = ','):
 		File.__init__(self, filepath, file_type, file_delim)
+		cfg_file = self.getConfigInfo(cfg_filepath)
 		self.file_dict = OrderedDict()
 		self.rows = OrderedDict()
 
@@ -156,7 +158,7 @@ class MetaFileText(File):
 				for hdr in hdrs:
 					fld_dict = fld_dict_tmp.copy()
 					for upd_fld in upd_flds:
-						fld_dict[upd_fld] = hdr
+						fld_dict[upd_fld] = hdr.strip()
 					dict[fields].append(fld_dict)
 
 				self.file_dict = dict
@@ -181,15 +183,14 @@ class MetaFileText(File):
 		dict = self.getFileDictionary(sort, sort_by_field) #get dictionary object for the file dictionary
 		return json.dumps(dict) #convert received dictionary to JSON
 
-	def getConfigInfo(self, cfg_file_name = 'config.cfg', wrkdir = ''):
-		# print('file name through Error object - beginning getConfigInfo() = {}'.format(self.error.entity.filepath))
+	#if config file path is blank, an attempt to use "config.cfg" file located in the current file folder will be used
+	def getConfigInfo(self, cfg_file_path = ''):
 		if not self.cfg_file:
-			if wrkdir == "":
-				wrkdir = self.wrkdir
-			cfg_path = Path(wrkdir) / cfg_file_name
+			if str(cfg_file_path).strip() == "":
+				cfg_file_path = Path(self.wrkdir) / "config.cfg"
+			#cfg_path = Path(wrkdir) / cfg_file_name
 			#print('cfg_path = {}'.format(cfg_path))
-			self.cfg_file = ConfigFile(cfg_path, 1)  # config file will use ':' by default
-		# print('file name through Error object - end getConfigInfo() = {}'.format(self.error.entity.filepath))
+			self.cfg_file = ConfigFile(cfg_file_path, 1)  # config file will use ':' by default
 		return self.cfg_file
 
 	def configValueListSeparator(self):
@@ -269,6 +270,7 @@ class MetaFileText(File):
 			self.error.addError('Configuration issue - unexpected identification method "{}" was provided for "{}". Expected methods are: {}'
 								.format(method, process_verified_desc, ', '.join(FieldIdMethod.field_id_methods)))
 
+	#this verifies that if method of identificatoin fields set as "number", list of fields contains only numeric values
 	def _verify_field_id_type_vs_method (self, method, fields, process_verified_desc = 'Unknown'):
 		if method in FieldIdMethod.field_id_methods:
 			if method == FieldIdMethod.number: # 'number'
@@ -314,6 +316,7 @@ class MetaFileText(File):
 					fieldMissed.append(mf.strip())
 		return fieldMissed
 
+	#this verifies that all fields passed in the "fields_to_check" list are utilized in the "expression_to_check"
 	def _validate_fields_vs_expression (self, fields_to_check, expression_to_check):
 		fieldMissed = []
 
@@ -391,7 +394,13 @@ class MetaFileText(File):
 				if not row.error.errorsExist():
 					#TODO: Implement action to save good records to DB and log this action
 					print ('No Errors - Saving to DB, Row Info: {}'.format (row.toStr()))
-					# pass
+					mdb = MetadataDB(self.cfg_file)
+
+					mdb_resp = mdb.submitRow(row.sample_id, row.toJSON(), self.getFileDictionary_JSON(True), str(self.filepath))
+					print ('Save to log file: Sample Id {} was submitted to MDB. Status: {}; Description: {}'.format(row.sample_id, mdb_resp[0][0]['status'], mdb_resp[0][0]['description']))
+					#for r in mdb_resp:
+					#	print(r[0]['status'])
+					#	print(r[0]['description'])
 				else:
 					# TODO: Implement action to save error records to Error file and log this action
 					#print ('Errors Present: {}, Row Info: {}'.format(row.error.getErrors(), row.row_content))
@@ -492,16 +501,77 @@ class Row ():
 				if str(smp_val) == sf.strip():
 					sid = sid.replace('{{{}}}'.format(str(smp_val)), cnt)
 		try:
-			self.__sample_id = eval(sid) # attempt to evaluate expression for sample id
+			smp_evaled = eval(sid) # attempt to evaluate expression for sample id
 		except Exception as ex:
 			# report an error if evaluation has failed.
 			self.error.addError('Error "{}" occurred during evaluating sample id expression: {}\n{} '.format(ex, sid, traceback.format_exc()))
 			# print(sys.exc_info()[1])
 			# print(traceback.format_exc())
 
+		self.__sample_id = smp_evaled.strip()
+		#print('=======>>>> self.__sample_id = "{}"'.format(self.__sample_id))
+		#print('=======>>>> self.__sample_id.strip() = "{}"'.format(self.__sample_id.strip()))
 		return self.__sample_id
 
-#if executed by itself, do the following
+class MetadataDB():
+	cfg_db_conn = 'mdb_conn_str'  # name of the config parameter storing DB connection string
+	cfg_db_sql_proc = 'mdb_sql_proc_load_sample'  # name of the config parameter storing DB name of the stored proc
+	cfg_db_study_id = 'mdb_study_id'  # name of the config parameter storing value of the MDB study id
+	cfg_dict_path = 'dict_tmpl_fields_node' # name of the config parameter storing value of dictionary path to list of fields
+	cfg_db_allow_dict_update = 'mdb_allow_dict_update'  # name of the config parameter storing values for "allow dict updates"
+	cfg_db_allow_sample_update = 'mdb_allow_sample_update' # name of the config parameter storing values for "allow sample updates"
+	s_conn = ''
+	#s_sql_proc = ''
+	conn = None
+	cfg = None
+
+	def __init__(self, obj_cfg):
+		self.cfg = obj_cfg
+		self.s_conn = self.cfg.getItemByKey(self.cfg_db_conn).strip()
+
+	def openConnection(self):
+		self.conn = pyodbc.connect(self.s_conn, autocommit=True)
+
+	def submitRow(self, sample_id, row_json, dict_json, filepath):
+		if not self.conn:
+			self.openConnection()
+		str_proc = self.cfg.getItemByKey(self.cfg_db_sql_proc).strip()
+		study_id = self.cfg.getItemByKey(self.cfg_db_study_id).strip()
+		dict_path = '$.' + self.cfg.getItemByKey(self.cfg_dict_path).strip()
+		dict_upd = self.cfg.getItemByKey(self.cfg_db_allow_dict_update).strip()
+		sample_upd = self.cfg.getItemByKey(self.cfg_db_allow_sample_update).strip()
+
+		#prepare stored proc string to be executed
+		str_proc = str_proc.replace('{study_id}', study_id)
+		str_proc = str_proc.replace('{sample_id}', sample_id)
+		str_proc = str_proc.replace('{smpl_json}', row_json)
+		str_proc = str_proc.replace('{dict_json}', dict_json)
+		str_proc = str_proc.replace('{dict_path}', dict_path)
+		str_proc = str_proc.replace('{filepath}', filepath)
+		str_proc = str_proc.replace('{dict_update}', dict_upd)
+		str_proc = str_proc.replace('{samlpe_update}', sample_upd)
+
+		print ('procedure (str_proc) = {}'.format(str_proc))
+
+		#str_proc = 'select * from dw_studies'
+		#str_proc = "exec usp_get_metadata '4'"
+		#str_proc = "usp_test_stas1"
+
+		cursor = self.conn.cursor()
+		cursor.execute(str_proc)
+		# returned recordsets
+		rs_out = []
+		rows = cursor.fetchall()
+		columns = [column[0] for column in cursor.description]
+		# printL (columns)
+		results = []
+		for row in rows:
+			results.append(dict(zip(columns, row)))
+		rs_out.append(results)
+		return rs_out
+
+
+# if executed by itself, do the following
 if __name__ == '__main__':
 
 	'''
@@ -547,8 +617,9 @@ if __name__ == '__main__':
 
 
 	#read config file
-	file_to_open = data_folder / "config.cfg"
-	fl = ConfigFile(file_to_open, 1) #config file will use ':' by default
+	file_to_open_cfg = data_folder / "config.cfg"
+	print('file_to_open_cfg = {}'.format(file_to_open_cfg))
+	fl = ConfigFile(file_to_open_cfg, 1) #config file will use ':' by default
 	#fl.loadConfigSettings()
 
 	print('Setting12 = {}'.format(fl.getItemByKey('Setting12')))
@@ -558,10 +629,13 @@ if __name__ == '__main__':
 
 	#read metafile #1
 	file_to_open = data_folder / "test1.txt"
-	fl1 = MetaFileText(file_to_open)
+	fl1 = MetaFileText(file_to_open, file_to_open_cfg)
 	print('Process metafile: {}'.format(fl1.filename))
 	fl1.processFile()
 	fl1 = None
+
+	sys.exit()  # =============================
+
 
 	# read metafile #2
 	file_to_open = data_folder / "test2.txt"
