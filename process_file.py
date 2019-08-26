@@ -27,8 +27,9 @@ class File:
 	file_delim = None # ','
 	lineList = None # []
 	__headers = None # []
-	error = None  # FileErrors class reference holding all errors associated with the current row
+	error = None  # FileErrors class reference holding all errors associated with the current file
 	sample_id_field_names = None # []
+	loaded = False
 
 	def __init__(self, filepath, file_type = 1, file_delim = ','):
 		self.filepath = filepath
@@ -51,10 +52,25 @@ class File:
 
 	def getFileContent (self):
 		if not self.lineList:
-			fl = open(self.filepath, "r")
-			self.lineList = [line.rstrip('\n') for line in fl]
-			fl.close()
+			if self.fileExists (self.filepath):
+				fl = open(self.filepath, "r")
+				self.lineList = [line.rstrip('\n') for line in fl]
+				fl.close()
+				self.loaded = True
+			else:
+				# TODO: log error that file does not exist
+				print ('From within the FILE class --> Loading content of the file "{}" failed since the file does not appear to exist".'.format(self.filepath))
+				self.lineList = None
+				self.loaded = False
 		return self.lineList
+
+	def fileExists(self, fn):
+		try:
+			open(fn, "r")
+			return 1
+		except IOError:
+			# print ("Log Error: File '{}' does not appear to exist.".format (fn))
+			return 0
 
 	def getHeaders (self):
 		if not self.__headers:
@@ -78,7 +94,7 @@ class File:
 #Config file class
 class ConfigFile(File):
 	config_items = {}
-	config_items_populated = False
+	# config_items_populated = False
 	key_value_delim = None
 	line_comment_sign = None
 
@@ -92,20 +108,21 @@ class ConfigFile(File):
 	#to identify all key/value pairs, it will split based on ":" for 1 delimiter only and will keep the rest as value of the key
 	#any text after "##" will be considered a comment and will be ignored
 	def loadConfigSettings(self):
-		if not self.config_items_populated:
+		if not self.config_items: # self.config_items_populated:
 			lns = File.getFileContent(self)
 
-			for l in lns:
-				#values = l.split(self.file_delim, 1) #use only first delimiter - deprecated code
+			if self.loaded:
+				for l in lns:
+					#values = l.split(self.file_delim, 1) #use only first delimiter - deprecated code
 
-				#print(l.split(self.line_comment_sign, 1)[0])
-				values = l.split(self.line_comment_sign, 1)[0].split(self.file_delim, 1)  # use only first delimiter
+					#print(l.split(self.line_comment_sign, 1)[0])
+					values = l.split(self.line_comment_sign, 1)[0].split(self.file_delim, 1)  # use only first delimiter
 
-				#print(values)
-				if len(values) >= 2:
-					#add items to a dictionary
-					self.config_items[values[0].strip()] = values[1].strip()
-			self.config_items_populated = True
+					#print(values)
+					if len(values) >= 2:
+						#add items to a dictionary
+						self.config_items[values[0].strip()] = values[1].strip()
+				#self.config_items_populated = True
 
 		return self.config_items
 
@@ -133,6 +150,13 @@ class MetaFileText(File):
 	def __init__(self, filepath, cfg_filepath = '', file_type = 1, file_delim = ','):
 		File.__init__(self, filepath, file_type, file_delim)
 		cfg_file = self.getConfigInfo(cfg_filepath)
+		if not cfg_file.loaded:
+			# TODO Log error
+			#print ('Log Error: config file cannot be loaded, aborting processing of "{}".'.format (filepath))
+
+			# report error for for failed config file loading
+			self.error.addError('File {}. Neither the provided config file "{}" nor default "config.cfg" file could not be loaded.'
+								.format(self.filename, cfg_filepath))
 		self.file_dict = OrderedDict()
 		self.rows = OrderedDict()
 
@@ -376,9 +400,13 @@ class MetaFileText(File):
 									.format(','.join(fieldMissed2), expr_str))
 
 	def processFile(self):
-		#validate file for "file" level errors
-		self._validateMandatoryFieldsExist()
-		self._validateSampleIDFields()
+		#validate file for "file" level errors (assuming that config file was loaded)
+		if self.cfg_file.loaded:
+			self._validateMandatoryFieldsExist()
+			self._validateSampleIDFields()
+
+		#TODO: validate MDB study_id. If it not set, attempt to create a study. If this process fails, report a File lever error.
+
 
 		if self.error.errorsExist():
 			# report file level errors to Log and do not process rows
@@ -392,15 +420,21 @@ class MetaFileText(File):
 				self.rows[row.row_number] = row #add Row class reference to the list of all rows
 
 				if not row.error.errorsExist():
-					#TODO: Implement action to save good records to DB and log this action
 					print ('No Errors - Saving to DB, Row Info: {}'.format (row.toStr()))
 					mdb = MetadataDB(self.cfg_file)
 
-					mdb_resp = mdb.submitRow(row.sample_id, row.toJSON(), self.getFileDictionary_JSON(True), str(self.filepath))
-					print ('Save to log file: Sample Id {} was submitted to MDB. Status: {}; Description: {}'.format(row.sample_id, mdb_resp[0][0]['status'], mdb_resp[0][0]['description']))
-					#for r in mdb_resp:
-					#	print(r[0]['status'])
-					#	print(r[0]['description'])
+					mdb_resp = mdb.submitRow(row, self) # row.sample_id, row.toJSON(), self.getFileDictionary_JSON(True), str(self.filepath))
+					if not row.error.errorsExist():
+						print (
+							'Save to log file: Sample Id "{}" was submitted to MDB. Status: {}; Description: {}'
+								.format(row.sample_id, mdb_resp[0][0]['status'], mdb_resp[0][0]['description']))
+						#for r in mdb_resp:
+						#	print(r[0]['status'])
+						#	print(r[0]['description'])
+					else:
+						print(
+							'Save to log file: Error occured during submitting sample Id "{}" to MDB. Error details: {}'
+								.format(row.sample_id, row.error.getErrorsToStr()))
 				else:
 					# TODO: Implement action to save error records to Error file and log this action
 					#print ('Errors Present: {}, Row Info: {}'.format(row.error.getErrors(), row.row_content))
@@ -417,11 +451,6 @@ class MetaFileText(File):
 			for d in self.rows.values():
 				if (d.error.errorsExist()):
 					print ('Row level error: {}'.format(d.error.getErrorsToStr()))
-
-	# it will submit given row to DB using config settings
-	def submitSampleToDB(self, row):
-		# TODO: implement
-		pass
 
 class Row ():
 	file = None #reference to the file object that this row belongs to
@@ -532,7 +561,13 @@ class MetadataDB():
 	def openConnection(self):
 		self.conn = pyodbc.connect(self.s_conn, autocommit=True)
 
-	def submitRow(self, sample_id, row_json, dict_json, filepath):
+	def submitRow(self, row, file): # sample_id, row_json, dict_json, filepath):
+
+		dict_json = file.getFileDictionary_JSON(True)
+		filepath = str(file.filepath)
+		sample_id = row.sample_id
+		row_json = row.toJSON()
+
 		if not self.conn:
 			self.openConnection()
 		str_proc = self.cfg.getItemByKey(self.cfg_db_sql_proc).strip()
@@ -557,18 +592,23 @@ class MetadataDB():
 		#str_proc = "exec usp_get_metadata '4'"
 		#str_proc = "usp_test_stas1"
 
-		cursor = self.conn.cursor()
-		cursor.execute(str_proc)
-		# returned recordsets
-		rs_out = []
-		rows = cursor.fetchall()
-		columns = [column[0] for column in cursor.description]
-		# printL (columns)
-		results = []
-		for row in rows:
-			results.append(dict(zip(columns, row)))
-		rs_out.append(results)
-		return rs_out
+		try:
+			cursor = self.conn.cursor()
+			cursor.execute(str_proc)
+			# returned recordsets
+			rs_out = []
+			rows = cursor.fetchall()
+			columns = [column[0] for column in cursor.description]
+			# printL (columns)
+			results = []
+			for row in rows:
+				results.append(dict(zip(columns, row)))
+			rs_out.append(results)
+			return rs_out
+
+		except Exception as ex:
+			# report an error if DB call has failed.
+			row.error.addError('Error "{}" occurred during submitting a row (sample_id = "{}") to database; used SQL script "{}". Here is the traceback: \n{} '.format(ex, sample_id, str_proc, traceback.format_exc()))
 
 
 # if executed by itself, do the following
@@ -603,27 +643,27 @@ if __name__ == '__main__':
 	#print (file_to_open)
 
 	#read file
-	fl = File(file_to_open)
+	#fl = File(file_to_open)
 	#fl = ConfigFile(file_to_open)
 
 	#fl.readFileLineByLine()
 
-	printL (fl.getFileContent())
-	printL('Headers===> {}'.format(fl.headers)) #getHeaders()
-	printL(fl.getRowByNumber(3))
-	printL (fl.getRowByNumber(2))
-	printL(fl.getRowByNumber(1))
-	fl = None
+	#printL (fl.getFileContent())
+	#printL('Headers===> {}'.format(fl.headers)) #getHeaders()
+	#printL(fl.getRowByNumber(3))
+	#printL (fl.getRowByNumber(2))
+	#printL(fl.getRowByNumber(1))
+	#fl = None
 
 
 	#read config file
 	file_to_open_cfg = data_folder / "config.cfg"
-	print('file_to_open_cfg = {}'.format(file_to_open_cfg))
-	fl = ConfigFile(file_to_open_cfg, 1) #config file will use ':' by default
-	#fl.loadConfigSettings()
+	#print('file_to_open_cfg = {}'.format(file_to_open_cfg))
+	#fl = ConfigFile(file_to_open_cfg, 1) #config file will use ':' by default
+	##fl.loadConfigSettings()
 
-	print('Setting12 = {}'.format(fl.getItemByKey('Setting12')))
-	fl = None
+	#print('Setting12 = {}'.format(fl.getItemByKey('Setting12')))
+	#fl = None
 
 	#sys.exit()
 
