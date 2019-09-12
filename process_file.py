@@ -74,7 +74,8 @@ class File:
 
 	def getHeaders (self):
 		if not self.__headers:
-			self.__headers = self.getRowByNumber(1).split(self.file_delim)
+			hdrs = self.getRowByNumber(1).split(self.file_delim)
+			self.__headers = [hdr.strip().replace(' ', '_') for hdr in hdrs]
 		return self.__headers
 
 	def getRowByNumber (self, rownum):
@@ -176,10 +177,12 @@ class MetaFileText(File):
 			dict[fields].clear()
 
 			if dict:
-				hdrs = self.getRowByNumber(1).split(self.file_delim)
+				hdrs = self.getHeaders() # self.getRowByNumber(1).split(self.file_delim)
+
 				upd_flds = cfg.getItemByKey('dict_field_tmpl_update_fields').split(self.configValueListSeparator())
 
 				for hdr in hdrs:
+					# hdr = hdr.strip().replace(' ', '_') # this should prevent spaces in the name of the column headers
 					fld_dict = fld_dict_tmp.copy()
 					for upd_fld in upd_flds:
 						fld_dict[upd_fld] = hdr.strip()
@@ -233,7 +236,7 @@ class MetaFileText(File):
 
 		out_dict = {'row':{},'error':None}
 
-		hdrs = self.getRowByNumber(1).split(self.file_delim) #get list of headers
+		hdrs = self.getHeaders() # self.getRowByNumber(1).split(self.file_delim) #get list of headers
 		lst_content = self.getRowByNumber(rownum).split(self.file_delim) #get list of values contained by the row
 
 		# print('file name through Error object - getFileRow() - before Row instance = {}'.format(self.error.entity.filepath))
