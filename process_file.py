@@ -6,7 +6,7 @@ from pathlib import Path
 import xlrd #installation: pip install xlrd
 import json
 from collections import OrderedDict
-import file_errors as ferr #custom library containing all error processing related classes
+import file_errors as ferr # custom library containing all error processing related classes
 import pyodbc
 
 def printL (m):
@@ -142,7 +142,7 @@ class ConfigFile(File):
 			self.loadConfigSettings()
 		return self.config_items
 
-#metadata text file class
+# metadata text file class
 class MetaFileText(File):
 	cfg_file = None
 	file_dict = None # OrderedDict()
@@ -455,6 +455,64 @@ class MetaFileText(File):
 				if (d.error.errorsExist()):
 					print ('Row level error: {}'.format(d.error.getErrorsToStr()))
 
+# TODO: for Text and Excel files - handling commas a part of the field values provided.
+#  		Idea is to accomodate double quotes as text identifier; however double quotes should not be considered a value
+
+# metadata Excel file class
+class MetaFileExcel(MetaFileText):
+	cfg_file = None
+	file_dict = None  # OrderedDict()
+	rows = None  # OrderedDict()
+
+	def __init__(self, filepath, cfg_filepath='', file_type=2):
+		File.__init__(self, filepath, file_type)
+		cfg_file = self.getConfigInfo(cfg_filepath)
+		if not cfg_file.loaded:
+			# TODO Log error
+			# print ('Log Error: config file cannot be loaded, aborting processing of "{}".'.format (filepath))
+
+			# report error for for failed config file loading
+			self.error.addError(
+				'File {}. Neither the provided config file "{}" nor default "config.cfg" file could not be loaded.'
+				.format(self.filename, cfg_filepath))
+		self.file_dict = OrderedDict()
+		self.rows = OrderedDict()
+
+	def getFileContent (self):
+		if not self.lineList:
+			if self.fileExists (self.filepath):
+				print ('------> MetaFileExcel - getFileContent function execution')
+				wb = xlrd.open_workbook(self.filepath)
+				sheet = wb.sheet_by_index(0)
+				sheet.cell_value(0, 0)
+				for i in range(sheet.nrows):
+					ln = []
+					for j in range(sheet.ncols):
+						# print(sheet.cell_value(i, j))
+						# ln.append('"' + sheet.cell_value(i,j) + '"')
+						ln.append(sheet.cell_value(i, j))
+					print ('Appending line to lineList: {}'.format(','.join(ln)))
+					self.lineList.append (','.join(ln))
+
+				# self.lineList = [line.rstrip('\n') for line in fl]
+				# fl.close()
+				self.loaded = True
+			else:
+				# TODO: log error that file does not exist
+				print ('From within the MetaFileExcel class --> Loading content of the file "{}" failed since the file does not appear to exist".'.format(self.filepath))
+				self.lineList = None
+				self.loaded = False
+		return self.lineList
+
+	def fileExists(self, fn):
+		try:
+			# open(fn, "r")
+			wb = xlrd.open_workbook(fn)
+			return 1
+		except IOError:
+			# print ("Log Error: File '{}' does not appear to exist.".format (fn))
+			return 0
+
 class Row ():
 	file = None #reference to the file object that this row belongs to
 	row_number = None #row number - header = row #1, next line #2, etc.
@@ -639,6 +697,16 @@ if __name__ == '__main__':
 
 	#sys.exit()
 	'''
+
+	data_folder = Path("E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/study02")
+	# print (data_folder)
+	file_to_open = data_folder / "test01.xlsx"
+	fl3 = MetaFileExcel (file_to_open)
+	# print('File row from excel: {}'.format(fl3.getFileRow(2)))
+	fl3.processFile()
+	fl3 = None
+
+	sys.exit()  # =============================
 
 	data_folder = Path("E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/study01")
 	#print (data_folder)
