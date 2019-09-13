@@ -463,8 +463,9 @@ class MetaFileExcel(MetaFileText):
 	cfg_file = None
 	file_dict = None  # OrderedDict()
 	rows = None  # OrderedDict()
+	sheet_name = ''
 
-	def __init__(self, filepath, cfg_filepath='', file_type=2):
+	def __init__(self, filepath, cfg_filepath='', file_type=2, sheet_name = ''):
 		File.__init__(self, filepath, file_type)
 		cfg_file = self.getConfigInfo(cfg_filepath)
 		if not cfg_file.loaded:
@@ -477,25 +478,45 @@ class MetaFileExcel(MetaFileText):
 				.format(self.filename, cfg_filepath))
 		self.file_dict = OrderedDict()
 		self.rows = OrderedDict()
+		self.sheet_name = sheet_name.strip()
 
 	def getFileContent (self):
 		if not self.lineList:
 			if self.fileExists (self.filepath):
 				print ('------> MetaFileExcel - getFileContent function execution')
 				wb = xlrd.open_workbook(self.filepath)
-				sheet = wb.sheet_by_index(0)
+				if len(self.sheet_name) == 0:
+					# by default retrieve the first sheet in the excel file
+					sheet = wb.sheet_by_index(0)
+				else:
+					# if sheet name was provided
+					sheets = wb.sheet_names() # get list of all sheets
+					if (self.sheet_name in sheets):
+						#if given sheet name in the list of available sheets, load the sheet
+						sheet = wb.sheet_by_name(self.sheet_name)
+					else:
+						# report an error if given sheet name not in the list of available sheets
+						self.error.addError('Given sheet name "{}" was not found in the file "{}". Verify that the sheet name exists in the file.'.format(self.sheet_name, self.filepath))
+						self.lineList = None
+						self.loaded = False
+						return self.lineList
 				sheet.cell_value(0, 0)
+
 				for i in range(sheet.nrows):
+					ln = sheet.row_values(i)
+					'''
 					ln = []
 					for j in range(sheet.ncols):
 						# print(sheet.cell_value(i, j))
 						# ln.append('"' + sheet.cell_value(i,j) + '"')
 						ln.append(sheet.cell_value(i, j))
 					print ('Appending line to lineList: {}'.format(','.join(ln)))
+					'''
 					self.lineList.append (','.join(ln))
 
 				# self.lineList = [line.rstrip('\n') for line in fl]
 				# fl.close()
+				wb.unload_sheet(sheet.name)
 				self.loaded = True
 			else:
 				# TODO: log error that file does not exist
@@ -701,7 +722,8 @@ if __name__ == '__main__':
 	data_folder = Path("E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/study02")
 	# print (data_folder)
 	file_to_open = data_folder / "test01.xlsx"
-	fl3 = MetaFileExcel (file_to_open)
+	#fl3 = MetaFileExcel (file_to_open,'',2,'TestSheet1')
+	fl3 = MetaFileExcel(file_to_open)
 	# print('File row from excel: {}'.format(fl3.getFileRow(2)))
 	fl3.processFile()
 	fl3 = None
