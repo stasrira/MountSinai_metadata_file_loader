@@ -7,7 +7,7 @@ import xlrd #installation: pip install xlrd
 import json
 from collections import OrderedDict
 import file_errors as ferr # custom library containing all error processing related classes
-import pyodbc
+import db_access as db # custom library containing all database related classes
 
 def printL (m):
 	if __name__ == '__main__':
@@ -29,7 +29,7 @@ class File:
 	__headers = None # []
 	error = None  # FileErrors class reference holding all errors associated with the current file
 	sample_id_field_names = None # []
-	loaded = False
+	loaded = None
 
 	def __init__(self, filepath, file_type = 1, file_delim = ','):
 		self.filepath = filepath
@@ -43,6 +43,7 @@ class File:
 		self.lineList = []
 		self.__headers = []
 		self.sample_id_field_names = []
+		self.loaded = False
 
 	@property
 	def headers(self):
@@ -94,7 +95,7 @@ class File:
 
 #Config file class
 class ConfigFile(File):
-	config_items = {}
+	config_items = None
 	# config_items_populated = False
 	key_value_delim = None
 	line_comment_sign = None
@@ -102,6 +103,7 @@ class ConfigFile(File):
 	def __init__(self, filepath, file_type=1, key_value_delim=':', line_comment_sign='##'):
 		self.key_value_delim = key_value_delim
 		self.line_comment_sign = line_comment_sign
+		self.config_items = {}
 		File.__init__(self, filepath, file_type, self.key_value_delim)
 		self.loadConfigSettings()
 
@@ -150,6 +152,7 @@ class MetaFileText(File):
 
 	def __init__(self, filepath, cfg_filepath = '', file_type = 1, file_delim = ','):
 		File.__init__(self, filepath, file_type, file_delim)
+		# self.cfg_file = None
 		cfg_file = self.getConfigInfo(cfg_filepath)
 		if not cfg_file.loaded:
 			# TODO Log error
@@ -424,7 +427,7 @@ class MetaFileText(File):
 
 				if not row.error.errorsExist():
 					print ('No Errors - Saving to DB, Row Info: {}'.format (row.toStr()))
-					mdb = MetadataDB(self.cfg_file)
+					mdb = db.MetadataDB(self.cfg_file)
 
 					mdb_resp = mdb.submitRow(row, self) # row.sample_id, row.toJSON(), self.getFileDictionary_JSON(True), str(self.filepath))
 					if not row.error.errorsExist():
@@ -460,13 +463,14 @@ class MetaFileText(File):
 
 # metadata Excel file class
 class MetaFileExcel(MetaFileText):
-	cfg_file = None
-	file_dict = None  # OrderedDict()
-	rows = None  # OrderedDict()
-	sheet_name = ''
+	# cfg_file = None
+	# file_dict = None  # OrderedDict()
+	# rows = None  # OrderedDict()
+	sheet_name = None
 
 	def __init__(self, filepath, cfg_filepath='', file_type=2, sheet_name = ''):
 		File.__init__(self, filepath, file_type)
+		# self.cfg_file = None
 		cfg_file = self.getConfigInfo(cfg_filepath)
 		if not cfg_file.loaded:
 			# TODO Log error
@@ -483,7 +487,7 @@ class MetaFileExcel(MetaFileText):
 	def getFileContent (self):
 		if not self.lineList:
 			if self.fileExists (self.filepath):
-				print ('------> MetaFileExcel - getFileContent function execution')
+				# print ('------> MetaFileExcel - getFileContent function execution')
 				wb = xlrd.open_workbook(self.filepath)
 				if len(self.sheet_name) == 0:
 					# by default retrieve the first sheet in the excel file
@@ -624,75 +628,6 @@ class Row ():
 		#print('=======>>>> self.__sample_id.strip() = "{}"'.format(self.__sample_id.strip()))
 		return self.__sample_id
 
-class MetadataDB():
-	cfg_db_conn = 'mdb_conn_str'  # name of the config parameter storing DB connection string
-	cfg_db_sql_proc = 'mdb_sql_proc_load_sample'  # name of the config parameter storing DB name of the stored proc
-	cfg_db_study_id = 'mdb_study_id'  # name of the config parameter storing value of the MDB study id
-	cfg_dict_path = 'dict_tmpl_fields_node' # name of the config parameter storing value of dictionary path to list of fields
-	cfg_db_allow_dict_update = 'mdb_allow_dict_update'  # name of the config parameter storing values for "allow dict updates"
-	cfg_db_allow_sample_update = 'mdb_allow_sample_update' # name of the config parameter storing values for "allow sample updates"
-	s_conn = ''
-	#s_sql_proc = ''
-	conn = None
-	cfg = None
-
-	def __init__(self, obj_cfg):
-		self.cfg = obj_cfg
-		self.s_conn = self.cfg.getItemByKey(self.cfg_db_conn).strip()
-
-	def openConnection(self):
-		self.conn = pyodbc.connect(self.s_conn, autocommit=True)
-
-	def submitRow(self, row, file): # sample_id, row_json, dict_json, filepath):
-
-		dict_json = file.getFileDictionary_JSON(True)
-		filepath = str(file.filepath)
-		sample_id = row.sample_id
-		row_json = row.toJSON()
-
-		if not self.conn:
-			self.openConnection()
-		str_proc = self.cfg.getItemByKey(self.cfg_db_sql_proc).strip()
-		study_id = self.cfg.getItemByKey(self.cfg_db_study_id).strip()
-		dict_path = '$.' + self.cfg.getItemByKey(self.cfg_dict_path).strip()
-		dict_upd = self.cfg.getItemByKey(self.cfg_db_allow_dict_update).strip()
-		sample_upd = self.cfg.getItemByKey(self.cfg_db_allow_sample_update).strip()
-
-		#prepare stored proc string to be executed
-		str_proc = str_proc.replace('{study_id}', study_id)
-		str_proc = str_proc.replace('{sample_id}', sample_id)
-		str_proc = str_proc.replace('{smpl_json}', row_json)
-		str_proc = str_proc.replace('{dict_json}', dict_json)
-		str_proc = str_proc.replace('{dict_path}', dict_path)
-		str_proc = str_proc.replace('{filepath}', filepath)
-		str_proc = str_proc.replace('{dict_update}', dict_upd)
-		str_proc = str_proc.replace('{samlpe_update}', sample_upd)
-
-		print ('procedure (str_proc) = {}'.format(str_proc))
-
-		#str_proc = 'select * from dw_studies'
-		#str_proc = "exec usp_get_metadata '4'"
-		#str_proc = "usp_test_stas1"
-
-		try:
-			cursor = self.conn.cursor()
-			cursor.execute(str_proc)
-			# returned recordsets
-			rs_out = []
-			rows = cursor.fetchall()
-			columns = [column[0] for column in cursor.description]
-			# printL (columns)
-			results = []
-			for row in rows:
-				results.append(dict(zip(columns, row)))
-			rs_out.append(results)
-			return rs_out
-
-		except Exception as ex:
-			# report an error if DB call has failed.
-			row.error.addError('Error "{}" occurred during submitting a row (sample_id = "{}") to database; used SQL script "{}". Here is the traceback: \n{} '.format(ex, sample_id, str_proc, traceback.format_exc()))
-
-
 # if executed by itself, do the following
 if __name__ == '__main__':
 
@@ -719,18 +654,8 @@ if __name__ == '__main__':
 	#sys.exit()
 	'''
 
-	data_folder = Path("E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/study02")
-	# print (data_folder)
-	file_to_open = data_folder / "test01.xlsx"
-	#fl3 = MetaFileExcel (file_to_open,'',2,'TestSheet1')
-	fl3 = MetaFileExcel(file_to_open)
-	# print('File row from excel: {}'.format(fl3.getFileRow(2)))
-	fl3.processFile()
-	fl3 = None
 
-	sys.exit()  # =============================
-
-	data_folder = Path("E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/study01")
+	data_folder = Path("E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/DataFiles/study01")
 	#print (data_folder)
 	file_to_open = data_folder / "test1.txt"
 	#print (file_to_open)
@@ -767,8 +692,19 @@ if __name__ == '__main__':
 	fl1.processFile()
 	fl1 = None
 
-	sys.exit()  # =============================
+	#sys.exit()  # =============================
 
+	data_folder = Path(
+		"E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/DataFiles/study02")
+	# print (data_folder)
+	file_to_open = data_folder / "test01.xlsx"
+	# fl3 = MetaFileExcel (file_to_open,'',2,'TestSheet1')
+	fl3 = MetaFileExcel(file_to_open)
+	# print('File row from excel: {}'.format(fl3.getFileRow(2)))
+	fl3.processFile()
+	fl3 = None
+
+	sys.exit()  # =============================
 
 	# read metafile #2
 	file_to_open = data_folder / "test2.txt"
