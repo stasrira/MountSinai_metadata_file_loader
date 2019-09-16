@@ -1,6 +1,7 @@
 import pyodbc
 import sys
 import os
+import time
 import traceback
 from pathlib import Path
 import xlrd #installation: pip install xlrd
@@ -82,7 +83,7 @@ class File:
 	def getRowByNumber (self, rownum):
 		lineList = self.getFileContent()
 		#check that requested row is withing available records of the file and >0
-		if len(lineList) >= rownum and rownum > 0:
+		if not lineList == None and len(lineList) >= rownum and rownum > 0:
 			return lineList[rownum-1]
 		else:
 			return ""
@@ -172,7 +173,7 @@ class MetaFileText(File):
 		dict = OrderedDict()
 
 		cfg = self.getConfigInfo()#get reference to config info class
-		fields = cfg.getItemByKey('dict_tmpl_fields_node')#get name of the node in dictionary holding array of fields
+		fields = cfg.getItemByKey('dict_tmpl_fields_node') # get name of the node in dictionary holding array of fields
 
 		if not self.file_dict:
 			dict = eval(cfg.getItemByKey('dict_tmpl')) #{fields:[]}
@@ -482,7 +483,12 @@ class MetaFileExcel(MetaFileText):
 				.format(self.filename, cfg_filepath))
 		self.file_dict = OrderedDict()
 		self.rows = OrderedDict()
-		self.sheet_name = sheet_name.strip()
+		self.sheet_name = ''
+		# self.sheet_name = sheet_name.strip()
+		if len(self.sheet_name) == 0:
+			# if sheet name was not passed as a parameter, try to get it from config file
+			self.sheet_name = self.cfg_file.getItemByKey('wk_sheet_name')
+			print (self.sheet_name)
 
 	def getFileContent (self):
 		if not self.lineList:
@@ -507,15 +513,31 @@ class MetaFileExcel(MetaFileText):
 				sheet.cell_value(0, 0)
 
 				for i in range(sheet.nrows):
-					ln = sheet.row_values(i)
-					'''
+					# ln = sheet.row_values(i)
+					# print (ln)
+
 					ln = []
 					for j in range(sheet.ncols):
 						# print(sheet.cell_value(i, j))
 						# ln.append('"' + sheet.cell_value(i,j) + '"')
-						ln.append(sheet.cell_value(i, j))
-					print ('Appending line to lineList: {}'.format(','.join(ln)))
-					'''
+						cell = sheet.cell(i, j)
+						cell_value = cell.value
+						# take care of number and dates received from Excel and converted to float by default
+						if cell.ctype == 2 and int(cell_value) == cell_value:
+							cell_value = str(int(cell_value))
+						# convert date back to human readable date format
+						# print ('cell_value = {}'.format(cell_value))
+						if cell.ctype == 3:
+							# print ('Local time = {}'.format(time.localtime()))
+							# print ('Datetime value = {}'.format(xlrd.xldate_as_datetime(cell_value, wb.datemode)))
+							# print('Date tuple value = {}'.format(xlrd.xldate_as_tuple(cell_value, wb.datemode)))
+							cell_value_date = xlrd.xldate_as_datetime(cell_value, wb.datemode)
+							# print ('Date value = {}'.format(cell_value_date.strftime("%Y-%m-%d")))
+							cell_value = cell_value_date.strftime("%Y-%m-%d")
+						ln.append(cell_value)
+					# print (ln)
+					# print ('Appending line to lineList: {}'.format(','.join(ln)))
+
 					self.lineList.append (','.join(ln))
 
 				# self.lineList = [line.rstrip('\n') for line in fl]

@@ -19,21 +19,31 @@ if __name__ == '__main__':
     df_path = Path(datafiles_path)
 
     (_, dirstudies, _) = next(walk(df_path))
-    print(dirstudies)
+    print('Study dirs: {}'.format(dirstudies))
 
     for dir in dirstudies:
         st_path = Path(datafiles_path) / dir
         (_, _, proc_files) = next(walk(Path(st_path)))
-        print (proc_files)
+
+        print ('Study dir files: {}'.format(proc_files))
+
         for fl in proc_files:
             if fl[-4:] != '.cfg':
                 fl_path = Path(st_path) / fl
                 print('--------->Process file {}'.format(fl_path))
                 if fl[-4:] == '.xls' or fl[-5:] == '.xlsx':
+                    # identify excel file and create appropriate object to handle it
                     fl_ob = pf.MetaFileExcel(fl_path)
                 else:
+                    # create an object to process text files
                     fl_ob = pf.MetaFileText(fl_path)
+
+                # save timestamp of beginning of the file processing
+                ts = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+
+                # process selected file
                 fl_ob.processFile()
+                # identify if any errors were identified and set status variable accordingly
                 if not fl_ob.error.errorsExist() and fl_ob.error.rowErrorsCount() == 0:
                     fl_status = 'OK'
                 else:
@@ -41,9 +51,16 @@ if __name__ == '__main__':
                 #print('=============>>File level errors: {}'.format(fl_ob.error.errorsExist()))
                 #print('=============>>Row level errors: {}'.format(fl_ob.error.rowErrorsCount()))
 
-                ts = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+                processed_dir = Path(st_path) / 'Processed'
+                if not os.path.exists(processed_dir):
+                    # if Processed folder does not exist in the current study folder, create it
+                    os.mkdir(processed_dir)
 
+                fl_processed_name = ts + '_' + fl_status + '_' + fl
                 print('New file name: {}'.format(ts + '_' + fl_status + '_' + fl))
+                # move processed files to Processed folder
+                # TODO: add try/catch block to handle errrors if file cannot be moved
+                os.rename (fl_path, processed_dir / fl_processed_name)
 
                 fl_ob = None
 
