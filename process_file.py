@@ -9,6 +9,8 @@ import json
 from collections import OrderedDict
 import file_errors as ferr # custom library containing all error processing related classes
 import db_access as db # custom library containing all database related classes
+import logging
+
 
 def printL (m):
 	if __name__ == '__main__':
@@ -31,6 +33,7 @@ class File:
 	error = None  # FileErrors class reference holding all errors associated with the current file
 	sample_id_field_names = None # []
 	loaded = None
+	logger = None
 
 	def __init__(self, filepath, file_type = 1, file_delim = ','):
 		self.filepath = filepath
@@ -51,6 +54,29 @@ class File:
 		if not self.__headers:
 			self.getHeaders()
 		return self.__headers
+
+	def setup_logger(self, wrkdir, filename):
+		logPath = Path(wrkdir) / 'Logs'
+		os.makedirs(logPath, exist_ok=True)
+		logFile = logPath / (filename + '_' + time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log')
+
+		mlog = logging.getLogger(__name__)
+		mlog.setLevel(logging.DEBUG)
+
+		# create a file handler
+		handler = logging.FileHandler(logFile)
+		handler.setLevel(logging.DEBUG)
+
+		# create a logging format
+		formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+		handler.setFormatter(formatter)
+
+		self.log_handler = handler
+
+		# add the file handler to the logger
+		mlog.addHandler(handler)
+
+		return mlog
 
 	def getFileContent (self):
 		if not self.lineList:
@@ -108,9 +134,9 @@ class ConfigFile(File):
 		File.__init__(self, filepath, file_type, self.key_value_delim)
 		self.loadConfigSettings()
 
-	#loads config setting assuming that it is a dictionary ==> key: value
-	#to identify all key/value pairs, it will split based on ":" for 1 delimiter only and will keep the rest as value of the key
-	#any text after "##" will be considered a comment and will be ignored
+	# loads config setting assuming that it is a dictionary ==> key: value
+	# to identify all key/value pairs, it will split based on ":" for 1 delimiter only and will keep the rest as value of the key
+	# any text after "##" will be considered a comment and will be ignored
 	def loadConfigSettings(self):
 		if not self.config_items: # self.config_items_populated:
 			lns = File.getFileContent(self)
@@ -153,21 +179,23 @@ class MetaFileText(File):
 
 	def __init__(self, filepath, cfg_filepath = '', file_type = 1, file_delim = ','):
 		File.__init__(self, filepath, file_type, file_delim)
-		# self.cfg_file = None
+
+		self.logger = self.setup_logger(self.wrkdir, self.filename)
+		self.logger.info('Start working with file {}'.format(filepath))
+
+		self.logger.info('Loading config file.')
 		cfg_file = self.getConfigInfo(cfg_filepath)
 		if not cfg_file.loaded:
-			# TODO Log error
-			#print ('Log Error: config file cannot be loaded, aborting processing of "{}".'.format (filepath))
-
 			# report error for for failed config file loading
-			self.error.addError('File {}. Neither the provided config file "{}" nor default "config.cfg" file could not be loaded.'
-								.format(self.filename, cfg_filepath))
+			_str = 'Neither the provided config file "{}" nor default "config.cfg" file could not be loaded.'.format(cfg_filepath)
+			self.error.addError(_str)
+			self.logger.error(_str)
 		self.file_dict = OrderedDict()
 		self.rows = OrderedDict()
 
-	#read headers of the file and create a dictionary for it
-	#dictionary for creating files should preserve columns order
-	#dictionary to be submitted to DB has to be sorted alphabetically
+	# read headers of the file and create a dictionary for it
+	# dictionary for creating files should preserve columns order
+	# dictionary to be submitted to DB has to be sorted alphabetically
 	def getFileDictionary(self, sort = False, sort_by_field = ''):
 
 		dict = OrderedDict()
@@ -196,15 +224,15 @@ class MetaFileText(File):
 
 		dict = self.file_dict
 
-		#sort dictionary if requested
+		# sort dictionary if requested
 		if sort:
-			#identify name of the field to apply sorting on the dictionary
+			# identify name of the field to apply sorting on the dictionary
 			if len(sort_by_field) == 0 or not sort_by_field in dict[fields][0]:
 				sort_by_field = cfg.getItemByKey('dict_field_sort_by')
 				if len(sort_by_field)== 0:
 					sort_by_field = 'name' #hardcoded default
 
-			#apply sorting, if given field name present in the dictionary structure
+			# apply sorting, if given field name present in the dictionary structure
 			if sort_by_field in dict[fields][0]:
 				dict[fields] = sorted(dict[fields], key=lambda i: i[sort_by_field])
 
@@ -226,16 +254,12 @@ class MetaFileText(File):
 
 	def configValueListSeparator(self):
 		val_delim = self.getConfigInfo().getItemByKey('config_value_list_separator') #read config file to get "value list separator"
-		#print ('val_delim = "{}"'.format(val_delim))
+		# print ('val_delim = "{}"'.format(val_delim))
 		if not val_delim:
 			val_delim = ''
-		return val_delim if len(val_delim.strip()) > 0 else ',' #if retrieved value is not blank, return it; otherwise return ',' as a default value
+		return val_delim if len(val_delim.strip()) > 0 else ',' # if retrieved value is not blank, return it; otherwise return ',' as a default value
 
-	def submitDictionaryToDB(self):
-		#TODO: implement
-		pass
-
-	#this will convert each row to a JSON ready dictionary based on the headers of the file
+	# this will convert each row to a JSON ready dictionary based on the headers of the file
 	def getFileRow(self, rownum):
 
 		out_dict = {'row':{},'error':None}
@@ -251,15 +275,17 @@ class MetaFileText(File):
 		if len(hdrs) == len (lst_content):
 			self._validateMandatoryFieldsPerRow(row) # validate row for required fields being populated
 
-			#create dictionary of the row, so it can be converted to JSON
+			# create dictionary of the row, so it can be converted to JSON
 			for hdr, cnt in zip(hdrs, lst_content):
 				row.row_dict[hdr.strip()] = cnt.strip()
 
-			#set sample id for the row
+			# set sample id for the row
 			row.assignSampleId()
 		else:
 			row.row_dict = None
-			row.error.addError('Incorrect number of fields! The row contains {} field(s), while {} headers are present.'.format(len (lst_content), len(hdrs)))
+			_str = 'Incorrect number of fields! The row contains {} field(s), while {} headers are present.'.format(len (lst_content), len(hdrs))
+			row.error.addError(_str)
+			self.logger.error(_str)
 
 		return row #out_dict
 
@@ -268,10 +294,10 @@ class MetaFileText(File):
 		delim = self.configValueListSeparator()
 		mandatFields = cfg.getItemByKey('mandatory_fields').split(delim)
 		mandatMethod = cfg.getItemByKey('mandatory_fields_method').split(delim)[0].strip()
-		out_val = 0 #keeps number of found validation errors
+		out_val = 0 # keeps number of found validation errors
 		# mandatFieldUsed = []
 
-		#validate every field of the row to make sure that all mandatory fields are populated
+		# validate every field of the row to make sure that all mandatory fields are populated
 		i = 0 #keeps field count
 		for hdr, cnt in zip(row.header, row.row_content):
 			i += 1
@@ -291,17 +317,20 @@ class MetaFileText(File):
 					if len(cnt.strip()) == 0:
 						out_val += 1  # increase number of found errors
 						# report error for mandatory field being empty
-						row.error.addError('Row #{}. Mandatory field "{}" (column #{}) has no value provided.'.format(row.row_number, hdr, i))
+						_str = 'Row #{}. Mandatory field "{}" (column #{}) has no value provided.'.format(row.row_number, hdr, i)
+						row.error.addError(_str)
+						self.logger.error(_str)
 
 		return out_val # return count found validation error
 
 	def _verify_id_method (self, method, process_verified_desc = 'Unknown'):
 		if not method in FieldIdMethod.field_id_methods:
 			# incorrect method was provided
-			self.error.addError('Configuration issue - unexpected identification method "{}" was provided for "{}". Expected methods are: {}'
-								.format(method, process_verified_desc, ', '.join(FieldIdMethod.field_id_methods)))
+			_str = 'Configuration issue - unexpected identification method "{}" was provided for "{}". Expected methods are: {}'.format(method, process_verified_desc, ', '.join(FieldIdMethod.field_id_methods))
+			self.error.addError(_str)
+			self.logger.error(_str)
 
-	#this verifies that if method of identificatoin fields set as "number", list of fields contains only numeric values
+	# this verifies that if method of identificatoin fields set as "number", list of fields contains only numeric values
 	def _verify_field_id_type_vs_method (self, method, fields, process_verified_desc = 'Unknown'):
 		if method in FieldIdMethod.field_id_methods:
 			if method == FieldIdMethod.number: # 'number'
@@ -309,9 +338,9 @@ class MetaFileText(File):
 				for f in fields:
 					if not f.strip().isnumeric():
 						# report error
-						self.error.addError(
-							'Configuration issue - provided value "{}" for a field number of "{}" is not numeric while the declared method is "{}".'
-							.format(f, process_verified_desc, method))
+						_str = 'Configuration issue - provided value "{}" for a field number of "{}" is not numeric while the declared method is "{}".'.format(f, process_verified_desc, method)
+						self.error.addError(_str)
+						self.logger.error(_str)
 
 	def _validate_fields_vs_headers (self, fields_to_check, field_id_method,
 									 fields_to_check_param_name, field_id_method_param_name):
@@ -347,7 +376,7 @@ class MetaFileText(File):
 					fieldMissed.append(mf.strip())
 		return fieldMissed
 
-	#this verifies that all fields passed in the "fields_to_check" list are utilized in the "expression_to_check"
+	# this verifies that all fields passed in the "fields_to_check" list are utilized in the "expression_to_check"
 	def _validate_fields_vs_expression (self, fields_to_check, expression_to_check):
 		fieldMissed = []
 
@@ -358,6 +387,7 @@ class MetaFileText(File):
 		return fieldMissed
 
 	def _validateMandatoryFieldsExist(self):
+		self.logger.info('Validating that all mandatory fields exist.')
 		cfg = self.getConfigInfo()
 		delim = self.configValueListSeparator()
 
@@ -375,10 +405,12 @@ class MetaFileText(File):
 
 		if fieldMissed:
 			# report error for absent mandatory field
-			self.error.addError('File {}. Mandatory field {}(s): {} - was(were) not found in the file.'
-								.format(self.filename, method,','.join(fieldMissed)))
+			_str = 'File {}. Mandatory field {}(s): {} - was(were) not found in the file.'.format(self.filename, method,','.join(fieldMissed))
+			self.error.addError(_str)
+			self.logger.error(str)
 
 	def _validateSampleIDFields(self):
+		self.logger.info('Validating that all fields requried for identifying sample id exist.')
 		cfg = self.getConfigInfo()
 		delim = self.configValueListSeparator()
 
@@ -403,11 +435,12 @@ class MetaFileText(File):
 			fieldMissed2 = self._validate_fields_vs_expression (fields, expr_str)
 			if fieldMissed2:
 				# report error if some sample_id component fields were not found in the sample_id_expression
-				self.error.addError('Configuration issue - Sample ID field(s) "{}" was(were) not found in the "sample_id_expression" parameter - {}.'
-									.format(','.join(fieldMissed2), expr_str))
+				_str = 'Configuration issue - Sample ID field(s) "{}" was(were) not found in the "sample_id_expression" parameter - {}.'.format(','.join(fieldMissed2), expr_str)
+				self.error.addError(_str)
+				self.logger.error(str)
 
 	def processFile(self):
-		#validate file for "file" level errors (assuming that config file was loaded)
+		# validate file for "file" level errors (assuming that config file was loaded)
 		if self.cfg_file.loaded:
 			self._validateMandatoryFieldsExist()
 			self._validateSampleIDFields()
@@ -459,6 +492,8 @@ class MetaFileText(File):
 				if (d.error.errorsExist()):
 					print ('Row level error: {}'.format(d.error.getErrorsToStr()))
 
+		self.logger.removeHandler(self.log_handler)
+
 # TODO: for Text and Excel files - handling commas a part of the field values provided.
 #  		Idea is to accomodate double quotes as text identifier; however double quotes should not be considered a value
 
@@ -471,16 +506,19 @@ class MetaFileExcel(MetaFileText):
 
 	def __init__(self, filepath, cfg_filepath='', file_type=2, sheet_name = ''):
 		File.__init__(self, filepath, file_type)
+
+		self.logger = self.setup_logger(self.wrkdir, self.filename)
+		self.logger.info('Start working with file {}'.format(filepath))
+
+		self.logger.info('Loading config file.')
 		# self.cfg_file = None
 		cfg_file = self.getConfigInfo(cfg_filepath)
 		if not cfg_file.loaded:
-			# TODO Log error
-			# print ('Log Error: config file cannot be loaded, aborting processing of "{}".'.format (filepath))
-
 			# report error for for failed config file loading
-			self.error.addError(
-				'File {}. Neither the provided config file "{}" nor default "config.cfg" file could not be loaded.'
-				.format(self.filename, cfg_filepath))
+			_str = 'Neither the provided config file "{}" nor default "config.cfg" file could not be loaded.'.format(cfg_filepath)
+			self.error.addError(_str)
+			self.logger.error(_str)
+
 		self.file_dict = OrderedDict()
 		self.rows = OrderedDict()
 		self.sheet_name = ''
@@ -488,7 +526,8 @@ class MetaFileExcel(MetaFileText):
 		if len(self.sheet_name) == 0:
 			# if sheet name was not passed as a parameter, try to get it from config file
 			self.sheet_name = self.cfg_file.getItemByKey('wk_sheet_name')
-			print (self.sheet_name)
+			# print (self.sheet_name)
+		self.logger.info('Sheet name that data will be loaded from: "{}"'.format(self.sheet_name))
 
 	def getFileContent (self):
 		if not self.lineList:
@@ -506,7 +545,9 @@ class MetaFileExcel(MetaFileText):
 						sheet = wb.sheet_by_name(self.sheet_name)
 					else:
 						# report an error if given sheet name not in the list of available sheets
-						self.error.addError('Given sheet name "{}" was not found in the file "{}". Verify that the sheet name exists in the file.'.format(self.sheet_name, self.filepath))
+						_str = 'Given sheet name "{}" was not found in the file "{}". Verify that the sheet name exists in the file.'.format(self.sheet_name, self.filepath)
+						self.error.addError(_str)
+						self.logger.error(_str)
 						self.lineList = None
 						self.loaded = False
 						return self.lineList
@@ -546,18 +587,18 @@ class MetaFileExcel(MetaFileText):
 				self.loaded = True
 			else:
 				# TODO: log error that file does not exist
-				print ('From within the MetaFileExcel class --> Loading content of the file "{}" failed since the file does not appear to exist".'.format(self.filepath))
+				_str = 'From within the MetaFileExcel class --> Loading content of the file "{}" failed since the file does not appear to exist".'.format(self.filepath)
+				self.error.addError(_str)
+				self.logger.error(_str)
 				self.lineList = None
 				self.loaded = False
 		return self.lineList
 
 	def fileExists(self, fn):
 		try:
-			# open(fn, "r")
 			wb = xlrd.open_workbook(fn)
 			return 1
 		except IOError:
-			# print ("Log Error: File '{}' does not appear to exist.".format (fn))
 			return 0
 
 class Row ():
