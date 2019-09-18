@@ -7,6 +7,8 @@ import time
 import logging
 import traceback
 
+CUR_FILE_LOGGER = None
+
 # if executed by itself, do the following
 if __name__ == '__main__':
 
@@ -26,7 +28,7 @@ if __name__ == '__main__':
     logFile = logPath / (time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log')
 
     # ------------------
-    mlog = logging.getLogger(__name__)
+    mlog = logging.getLogger('main_log') # __name__
     mlog.setLevel(logging.DEBUG)
 
     # create a file handler
@@ -53,7 +55,6 @@ if __name__ == '__main__':
                         level=logging.DEBUG)
     '''
 
-    mlog.debug("Test debug msg")
     mlog.info('Start processing files in "{}"'.format(df_path))
 
     try:
@@ -98,7 +99,11 @@ if __name__ == '__main__':
                         else:
                             fl_status = 'ERROR'
 
-                        mlog.info('Processing status of file {} is {}'.format(fl_path, fl_status))
+                        _str = 'Processing status: "{}"; file: {}'.format(fl_status, fl_path)
+                        if fl_status == "OK":
+                            mlog.info(_str)
+                        else:
+                            mlog.warning(_str)
 
                         #print('=============>>File level errors: {}'.format(fl_ob.error.errorsExist()))
                         #print('=============>>Row level errors: {}'.format(fl_ob.error.rowErrorsCount()))

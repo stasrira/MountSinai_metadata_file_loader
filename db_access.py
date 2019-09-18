@@ -1,5 +1,6 @@
 import pyodbc
 import traceback
+import logging
 
 class MetadataDB():
 	cfg_db_conn = 'mdb_conn_str'  # name of the config parameter storing DB connection string
@@ -45,11 +46,9 @@ class MetadataDB():
 		str_proc = str_proc.replace('{dict_update}', dict_upd)
 		str_proc = str_proc.replace('{samlpe_update}', sample_upd)
 
-		print ('procedure (str_proc) = {}'.format(str_proc))
-
-		#str_proc = 'select * from dw_studies'
-		#str_proc = "exec usp_get_metadata '4'"
-		#str_proc = "usp_test_stas1"
+		# get currrent file_processing_log
+		file.logger.debug('SQL Procedure call = {}'.format(str_proc))
+		#print ('procedure (str_proc) = {}'.format(str_proc))
 
 		try:
 			cursor = self.conn.cursor()
@@ -58,7 +57,6 @@ class MetadataDB():
 			rs_out = []
 			rows = cursor.fetchall()
 			columns = [column[0] for column in cursor.description]
-			# printL (columns)
 			results = []
 			for row in rows:
 				results.append(dict(zip(columns, row)))
@@ -67,4 +65,8 @@ class MetadataDB():
 
 		except Exception as ex:
 			# report an error if DB call has failed.
-			row.error.addError('Error "{}" occurred during submitting a row (sample_id = "{}") to database; used SQL script "{}". Here is the traceback: \n{} '.format(ex, sample_id, str_proc, traceback.format_exc()))
+			_str = 'Error "{}" occurred during submitting a row (sample_id = "{}") to database; used SQL script "{}". Here is the traceback: \n{} '.format(
+				ex, sample_id, str_proc, traceback.format_exc())
+			row.error.addError(_str)
+			file.logger.error (_str)
+

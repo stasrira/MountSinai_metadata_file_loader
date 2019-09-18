@@ -11,11 +11,6 @@ import file_errors as ferr # custom library containing all error processing rela
 import db_access as db # custom library containing all database related classes
 import logging
 
-
-def printL (m):
-	if __name__ == '__main__':
-		print (m)
-
 class FieldIdMethod:
 	field_id_methods = ['name', 'number']
 	name = field_id_methods[0]
@@ -41,9 +36,7 @@ class File:
 		self.filename = Path(os.path.abspath(filepath)).name
 		self.file_type = file_type
 		self.file_delim = file_delim
-		#headers = self.getHeaders() #self.getRowByNumber(1).split(self.file_delim) #save header of the file to a list
 		self.error = ferr.FileError(self)
-		# print('----------Init for file {}'.format(self.filename))
 		self.lineList = []
 		self.__headers = []
 		self.sample_id_field_names = []
@@ -60,12 +53,12 @@ class File:
 		os.makedirs(logPath, exist_ok=True)
 		logFile = logPath / (filename + '_' + time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log')
 
-		mlog = logging.getLogger(__name__)
+		mlog = logging.getLogger('file_processing_log')
 		mlog.setLevel(logging.DEBUG)
 
 		# create a file handler
 		handler = logging.FileHandler(logFile)
-		handler.setLevel(logging.DEBUG)
+		handler.setLevel(logging.DEBUG) #
 
 		# create a logging format
 		formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -81,13 +74,20 @@ class File:
 	def getFileContent (self):
 		if not self.lineList:
 			if self.fileExists (self.filepath):
+				if not self.logger:
+					loc_log = logging.getLogger('file_processing_log')
+				loc_log.debug ('Loading file content of "{}"'.format(self.filepath))
+
 				fl = open(self.filepath, "r")
 				self.lineList = [line.rstrip('\n') for line in fl]
 				fl.close()
 				self.loaded = True
 			else:
-				# TODO: log error that file does not exist
-				print ('From within the FILE class --> Loading content of the file "{}" failed since the file does not appear to exist".'.format(self.filepath))
+				_str = 'Loading content of the file "{}" failed since the file does not appear to exist".'.format(self.filepath)
+				self.error.addError(_str)
+				if not self.logger:
+					loc_log = logging.getLogger('file_processing_log')
+				loc_log.error(_str)
 				self.lineList = None
 				self.loaded = False
 		return self.lineList
@@ -97,7 +97,6 @@ class File:
 			open(fn, "r")
 			return 1
 		except IOError:
-			# print ("Log Error: File '{}' does not appear to exist.".format (fn))
 			return 0
 
 	def getHeaders (self):
@@ -143,24 +142,18 @@ class ConfigFile(File):
 
 			if self.loaded:
 				for l in lns:
-					#values = l.split(self.file_delim, 1) #use only first delimiter - deprecated code
-
-					#print(l.split(self.line_comment_sign, 1)[0])
 					values = l.split(self.line_comment_sign, 1)[0].split(self.file_delim, 1)  # use only first delimiter
 
-					#print(values)
 					if len(values) >= 2:
-						#add items to a dictionary
+						# add items to a dictionary
 						self.config_items[values[0].strip()] = values[1].strip()
-				#self.config_items_populated = True
-
 		return self.config_items
 
 	def getItemByKey(self, item_key):
-		#check if config file was already loaded
+		# check if config file was already loaded
 		if not self.config_items:
 			self.loadConfigSettings()
-		#check if requested key exists
+		# check if requested key exists
 		if item_key in self.config_items:
 			return self.config_items[item_key]
 		else:
@@ -242,19 +235,17 @@ class MetaFileText(File):
 		dict = self.getFileDictionary(sort, sort_by_field) #get dictionary object for the file dictionary
 		return json.dumps(dict) #convert received dictionary to JSON
 
-	#if config file path is blank, an attempt to use "config.cfg" file located in the current file folder will be used
 	def getConfigInfo(self, cfg_file_path = ''):
 		if not self.cfg_file:
 			if str(cfg_file_path).strip() == "":
+				# if config file path is blank, an attempt to use "config.cfg" file located in the current file folder will be used
 				cfg_file_path = Path(self.wrkdir) / "config.cfg"
-			#cfg_path = Path(wrkdir) / cfg_file_name
-			#print('cfg_path = {}'.format(cfg_path))
 			self.cfg_file = ConfigFile(cfg_file_path, 1)  # config file will use ':' by default
 		return self.cfg_file
 
 	def configValueListSeparator(self):
-		val_delim = self.getConfigInfo().getItemByKey('config_value_list_separator') #read config file to get "value list separator"
-		# print ('val_delim = "{}"'.format(val_delim))
+		val_delim = self.getConfigInfo().getItemByKey('config_value_list_separator') # read config file to get "value list separator"
+		#self.logger.debug('configValueListSeparator() => val_delim = "{}"'.format(val_delim))
 		if not val_delim:
 			val_delim = ''
 		return val_delim if len(val_delim.strip()) > 0 else ',' # if retrieved value is not blank, return it; otherwise return ',' as a default value
@@ -283,7 +274,7 @@ class MetaFileText(File):
 			row.assignSampleId()
 		else:
 			row.row_dict = None
-			_str = 'Incorrect number of fields! The row contains {} field(s), while {} headers are present.'.format(len (lst_content), len(hdrs))
+			_str = 'Row #{}. Incorrect number of fields! The row contains {} field(s), while {} headers are present.'.format(rownum, len (lst_content), len(hdrs))
 			row.error.addError(_str)
 			self.logger.error(_str)
 
@@ -369,9 +360,8 @@ class MetaFileText(File):
 				if str(hdr_val) == mf.strip():
 					fieldUsed.append(mf.strip())
 
-		if len(fields) != len(fieldUsed): #if not all fields from the list were matched to header
+		if len(fields) != len(fieldUsed): # if not all fields from the list were matched to header
 			for mf in fields:
-				# print ('mandatory field (by {}) = {}'.format(method, mf))
 				if not mf.strip() in fieldUsed:
 					fieldMissed.append(mf.strip())
 		return fieldMissed
@@ -407,10 +397,10 @@ class MetaFileText(File):
 			# report error for absent mandatory field
 			_str = 'File {}. Mandatory field {}(s): {} - was(were) not found in the file.'.format(self.filename, method,','.join(fieldMissed))
 			self.error.addError(_str)
-			self.logger.error(str)
+			self.logger.error(_str)
 
 	def _validateSampleIDFields(self):
-		self.logger.info('Validating that all fields requried for identifying sample id exist.')
+		self.logger.info('Validating that all fields required for identifying sample id exist.')
 		cfg = self.getConfigInfo()
 		delim = self.configValueListSeparator()
 
@@ -429,15 +419,16 @@ class MetaFileText(File):
 			fields, method, fields_param_name, method_param_name)
 		if fieldMissed:
 			# report error if some sample_id component fields do not match header names or numbers (depending on the method)
-			self.error.addError('File {}. Sample ID field {}(s): {} - was(were) not found in the file.'
-								.format(self.filename, method,','.join(fieldMissed)))
+			_str = 'File {}. Sample ID field {}(s): {} - was(were) not found in the file.'.format(self.filename, method,','.join(fieldMissed))
+			self.error.addError(_str)
+			self.logger.error(_str)
 		else:
 			fieldMissed2 = self._validate_fields_vs_expression (fields, expr_str)
 			if fieldMissed2:
 				# report error if some sample_id component fields were not found in the sample_id_expression
 				_str = 'Configuration issue - Sample ID field(s) "{}" was(were) not found in the "sample_id_expression" parameter - {}.'.format(','.join(fieldMissed2), expr_str)
 				self.error.addError(_str)
-				self.logger.error(str)
+				self.logger.error(_str)
 
 	def processFile(self):
 		# validate file for "file" level errors (assuming that config file was loaded)
@@ -450,48 +441,61 @@ class MetaFileText(File):
 
 		if self.error.errorsExist():
 			# report file level errors to Log and do not process rows
-			print('=====>>>> File ERROR reported!!!')
-			print ('File Error Content: {}'.format(self.error.getErrorsToStr()))
+			self.logger.error('File level errors we identified! Aborting the file processing.')
+			self.logger.error('Summary of File lever errors: {}'.format(self.error.getErrorsToStr()))
+			# print('=====>>>> File ERROR reported!!!')
+			# print ('File Error Content: {}'.format(self.error.getErrorsToStr()))
 		else:
-			#proceed with processing file if no file-level errors were found
+			# proceed with processing file, if no file-level errors were found
+			self.logger.info ('Proceeding with processing rows of the file.')
 			numRows = self.rowsCount()
 			for i in range(1, numRows):
+				self.logger.debug('Processing row #{} out of {}.'.format(i, numRows))
 				row = self.getFileRow(i+1)
-				self.rows[row.row_number] = row #add Row class reference to the list of all rows
+				self.rows[row.row_number] = row # add Row class reference to the list of all rows
 
 				if not row.error.errorsExist():
-					print ('No Errors - Saving to DB, Row Info: {}'.format (row.toStr()))
+					# print ('No Errors - Saving to DB, Row Info: {}'.format (row.toStr()))
+					self.logger.info('Row #{}. No Row level errors were identified. Saving it to database. Row data: {}'.format(
+						row.row_number, row.toStr()))
 					mdb = db.MetadataDB(self.cfg_file)
 
 					mdb_resp = mdb.submitRow(row, self) # row.sample_id, row.toJSON(), self.getFileDictionary_JSON(True), str(self.filepath))
 					if not row.error.errorsExist():
-						print (
-							'Save to log file: Sample Id "{}" was submitted to MDB. Status: {}; Description: {}'
-								.format(row.sample_id, mdb_resp[0][0]['status'], mdb_resp[0][0]['description']))
-						#for r in mdb_resp:
-						#	print(r[0]['status'])
-						#	print(r[0]['description'])
+						_str = 'Row #{}. Sample Id "{}" was submitted to MDB. Status: {}; Description: {}'.format(
+							row.row_number, row.sample_id, mdb_resp[0][0]['status'], mdb_resp[0][0]['description'])
+						self.logger.info(_str)
+						# for r in mdb_resp:
+						#	 print(r[0]['status'])
+						#	 print(r[0]['description'])
 					else:
-						print(
-							'Save to log file: Error occured during submitting sample Id "{}" to MDB. Error details: {}'
-								.format(row.sample_id, row.error.getErrorsToStr()))
+						_str = 'Error occured during submitting sample Id "{}" to MDB. Error details: {}'.format(
+							row.sample_id, row.error.getErrorsToStr())
+						self.logger.error(_str)
 				else:
-					# TODO: Implement action to save error records to Error file and log this action
-					#print ('Errors Present: {}, Row Info: {}'.format(row.error.getErrors(), row.row_content))
-					print ('Add row to Error file - Errors Present {}, Row Info: {}'.format(row.error.getErrorsToStr(), row.row_content))
+					# report to log file if Row level errros were identified
+					_str = 'Row #{}. Row level errors were identified. Errors: {}; Row data: {}'.format(
+						row.row_number, row.error.getErrorsToStr(), row.row_content)
+					self.logger.error(_str)
+					# print ('Add row to Error file - Errors Present {}, Row Info: {}'.format(row.error.getErrorsToStr(), row.row_content))
 
-		# for testing only - summary of errors in file
-		print ('------> Summary of errors for file {}'.format(self.filename))
-		print('Summary of File level errors: {}'.format(self.error.getErrorsToStr())) if self.error.errorsExist() else print('No File level errors!')
+		# report error summary of processing the file
+		self.logger.info('SUMMARY OF ERRORS ==============>')
+		self.logger.info('File level errors: {}'.format(self.error.getErrorsToStr())) if self.error.errorsExist() else self.logger.info('No File level errors were identified!')
+		# print ('------> Summary of errors for file {}'.format(self.filename))
+		# print('Summary of File level errors: {}'.format(self.error.getErrorsToStr())) if self.error.errorsExist() else print('No File level errors!')
 
 		row_err_cnt = self.error.rowErrorsCount()
 		if row_err_cnt == 0:
-			print('No Row level errors found for this file!')
+			# print('No Row level errors found for this file!')
+			self.logger.info('No Row level errors were identified!')
 		else:
 			for d in self.rows.values():
 				if (d.error.errorsExist()):
-					print ('Row level error: {}'.format(d.error.getErrorsToStr()))
+					# print ('Row level error: {}'.format(d.error.getErrorsToStr()))
+					self.logger.info('Row level error: {}'.format(d.error.getErrorsToStr()))
 
+		# release the log handler for the current file
 		self.logger.removeHandler(self.log_handler)
 
 # TODO: for Text and Excel files - handling commas a part of the field values provided.
@@ -523,7 +527,7 @@ class MetaFileExcel(MetaFileText):
 		self.rows = OrderedDict()
 		self.sheet_name = ''
 		# self.sheet_name = sheet_name.strip()
-		if len(self.sheet_name) == 0:
+		if not self.sheet_name or len(self.sheet_name) == 0:
 			# if sheet name was not passed as a parameter, try to get it from config file
 			self.sheet_name = self.cfg_file.getItemByKey('wk_sheet_name')
 			# print (self.sheet_name)
@@ -532,25 +536,28 @@ class MetaFileExcel(MetaFileText):
 	def getFileContent (self):
 		if not self.lineList:
 			if self.fileExists (self.filepath):
-				# print ('------> MetaFileExcel - getFileContent function execution')
+				self.logger.debug('Loading file content of "{}"'.format(self.filepath))
+
 				wb = xlrd.open_workbook(self.filepath)
-				if len(self.sheet_name) == 0:
+				if not self.sheet_name or len(self.sheet_name) == 0:
 					# by default retrieve the first sheet in the excel file
 					sheet = wb.sheet_by_index(0)
 				else:
 					# if sheet name was provided
 					sheets = wb.sheet_names() # get list of all sheets
 					if (self.sheet_name in sheets):
-						#if given sheet name in the list of available sheets, load the sheet
+						# if given sheet name in the list of available sheets, load the sheet
 						sheet = wb.sheet_by_name(self.sheet_name)
 					else:
 						# report an error if given sheet name not in the list of available sheets
 						_str = 'Given sheet name "{}" was not found in the file "{}". Verify that the sheet name exists in the file.'.format(self.sheet_name, self.filepath)
 						self.error.addError(_str)
 						self.logger.error(_str)
+
 						self.lineList = None
 						self.loaded = False
 						return self.lineList
+
 				sheet.cell_value(0, 0)
 
 				for i in range(sheet.nrows):
@@ -569,27 +576,19 @@ class MetaFileExcel(MetaFileText):
 						# convert date back to human readable date format
 						# print ('cell_value = {}'.format(cell_value))
 						if cell.ctype == 3:
-							# print ('Local time = {}'.format(time.localtime()))
-							# print ('Datetime value = {}'.format(xlrd.xldate_as_datetime(cell_value, wb.datemode)))
-							# print('Date tuple value = {}'.format(xlrd.xldate_as_tuple(cell_value, wb.datemode)))
 							cell_value_date = xlrd.xldate_as_datetime(cell_value, wb.datemode)
-							# print ('Date value = {}'.format(cell_value_date.strftime("%Y-%m-%d")))
 							cell_value = cell_value_date.strftime("%Y-%m-%d")
 						ln.append(cell_value)
-					# print (ln)
-					# print ('Appending line to lineList: {}'.format(','.join(ln)))
 
 					self.lineList.append (','.join(ln))
 
-				# self.lineList = [line.rstrip('\n') for line in fl]
-				# fl.close()
 				wb.unload_sheet(sheet.name)
 				self.loaded = True
 			else:
-				# TODO: log error that file does not exist
-				_str = 'From within the MetaFileExcel class --> Loading content of the file "{}" failed since the file does not appear to exist".'.format(self.filepath)
+				_str = 'Loading content of the file "{}" failed since the file does not appear to exist".'.format(self.filepath)
 				self.error.addError(_str)
 				self.logger.error(_str)
+
 				self.lineList = None
 				self.loaded = False
 		return self.lineList
@@ -642,7 +641,7 @@ class Row ():
 		self.__error = value
 
 	def toJSON(self):
-		#print ('From withing toJSON - Dictionary source:{}'.format(self.row_dict))
+		# print ('From withing toJSON - Dictionary source:{}'.format(self.row_dict))
 		return json.dumps(self.row_dict)
 
 	def toStr(self):
@@ -656,6 +655,8 @@ class Row ():
 		return row
 
 	def assignSampleId(self):
+		self.file.logger.debug('Row #{}. Assigning sample id value.'.format(self.row_number))
+
 		cfg = self.file.getConfigInfo()
 		delim = self.file.configValueListSeparator()
 
@@ -678,17 +679,18 @@ class Row ():
 
 				if str(smp_val) == sf.strip():
 					sid = sid.replace('{{{}}}'.format(str(smp_val)), cnt)
+
+		self.file.logger.debug ('Row #{}. Expression for sample id evaluation: "{}"'.format(self.row_number, sid))
 		try:
 			smp_evaled = eval(sid) # attempt to evaluate expression for sample id
 		except Exception as ex:
 			# report an error if evaluation has failed.
-			self.error.addError('Error "{}" occurred during evaluating sample id expression: {}\n{} '.format(ex, sid, traceback.format_exc()))
-			# print(sys.exc_info()[1])
-			# print(traceback.format_exc())
+			_str = 'Error "{}" occurred during evaluating sample id expression: {}\n{} '.format(ex, sid, traceback.format_exc())
+			self.error.addError(_str)
+			self.file.logger.error(_str)
+			self.file.logger.debug(sys.exc_info()[1])
 
 		self.__sample_id = smp_evaled.strip()
-		#print('=======>>>> self.__sample_id = "{}"'.format(self.__sample_id))
-		#print('=======>>>> self.__sample_id.strip() = "{}"'.format(self.__sample_id.strip()))
 		return self.__sample_id
 
 # if executed by itself, do the following
@@ -729,11 +731,6 @@ if __name__ == '__main__':
 
 	#fl.readFileLineByLine()
 
-	#printL (fl.getFileContent())
-	#printL('Headers===> {}'.format(fl.headers)) #getHeaders()
-	#printL(fl.getRowByNumber(3))
-	#printL (fl.getRowByNumber(2))
-	#printL(fl.getRowByNumber(1))
 	#fl = None
 
 
