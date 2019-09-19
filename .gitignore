@@ -108,3 +108,7 @@ venv.bak/
 
 #pycharm workspace file
 .idea/workspace.xml
+
+#processed folders
+/DataFiles/study01/Processed/
+/DataFiles/study02/Processed/

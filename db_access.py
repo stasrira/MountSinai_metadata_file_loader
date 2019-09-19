@@ -1,6 +1,5 @@
 import pyodbc
 import traceback
-import logging
 
 class MetadataDB():
 	cfg_db_conn = 'mdb_conn_str'  # name of the config parameter storing DB connection string

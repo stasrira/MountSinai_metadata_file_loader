@@ -10,11 +10,17 @@ from collections import OrderedDict
 import file_errors as ferr # custom library containing all error processing related classes
 import db_access as db # custom library containing all database related classes
 import logging
+import mdl_logging as ml
+
+common_logger_name = 'file_processing_log'
+logging_level = 'INFO'
+
 
 class FieldIdMethod:
 	field_id_methods = ['name', 'number']
 	name = field_id_methods[0]
 	number = field_id_methods[1]
+
 
 #Text file class (used as a base)
 class File:
@@ -49,35 +55,23 @@ class File:
 		return self.__headers
 
 	def setup_logger(self, wrkdir, filename):
-		logPath = Path(wrkdir) / 'Logs'
-		os.makedirs(logPath, exist_ok=True)
-		logFile = logPath / (filename + '_' + time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log')
 
-		mlog = logging.getLogger('file_processing_log')
-		mlog.setLevel(logging.DEBUG)
+		lg = ml.setup_logger(common_logger_name, logging_level,
+					Path(wrkdir) / 'Logs',
+					filename + '_' + time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log')
 
-		# create a file handler
-		handler = logging.FileHandler(logFile)
-		handler.setLevel(logging.DEBUG) #
-
-		# create a logging format
-		formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-		handler.setFormatter(formatter)
-
-		self.log_handler = handler
-
-		# add the file handler to the logger
-		mlog.addHandler(handler)
-
-		return mlog
+		self.log_handler = lg['handler']
+		return lg['logger']
 
 	def getFileContent (self):
+		if not self.logger:
+			loc_log = logging.getLogger(common_logger_name)
+		else:
+			loc_log = self.logger
+
 		if not self.lineList:
 			if self.fileExists (self.filepath):
-				if not self.logger:
-					loc_log = logging.getLogger('file_processing_log')
 				loc_log.debug ('Loading file content of "{}"'.format(self.filepath))
-
 				fl = open(self.filepath, "r")
 				self.lineList = [line.rstrip('\n') for line in fl]
 				fl.close()
@@ -85,8 +79,6 @@ class File:
 			else:
 				_str = 'Loading content of the file "{}" failed since the file does not appear to exist".'.format(self.filepath)
 				self.error.addError(_str)
-				if not self.logger:
-					loc_log = logging.getLogger('file_processing_log')
 				loc_log.error(_str)
 				self.lineList = None
 				self.loaded = False
@@ -481,14 +473,14 @@ class MetaFileText(File):
 
 		# report error summary of processing the file
 		self.logger.info('SUMMARY OF ERRORS ==============>')
-		self.logger.info('File level errors: {}'.format(self.error.getErrorsToStr())) if self.error.errorsExist() else self.logger.info('No File level errors were identified!')
+		self.logger.info('File level errors: {}'.format(self.error.getErrorsToStr())) if self.error.errorsExist() else self.logger.info('No File level errors were identified.')
 		# print ('------> Summary of errors for file {}'.format(self.filename))
 		# print('Summary of File level errors: {}'.format(self.error.getErrorsToStr())) if self.error.errorsExist() else print('No File level errors!')
 
 		row_err_cnt = self.error.rowErrorsCount()
 		if row_err_cnt == 0:
 			# print('No Row level errors found for this file!')
-			self.logger.info('No Row level errors were identified!')
+			self.logger.info('No Row level errors were identified.')
 		else:
 			for d in self.rows.values():
 				if (d.error.errorsExist()):
@@ -496,7 +488,8 @@ class MetaFileText(File):
 					self.logger.info('Row level error: {}'.format(d.error.getErrorsToStr()))
 
 		# release the log handler for the current file
-		self.logger.removeHandler(self.log_handler)
+		#self.logger.removeHandler(self.log_handler)
+		ml.deactivate_logger(self.logger, self.log_handler)
 
 # TODO: for Text and Excel files - handling commas a part of the field values provided.
 #  		Idea is to accomodate double quotes as text identifier; however double quotes should not be considered a value
