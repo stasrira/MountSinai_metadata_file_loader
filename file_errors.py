@@ -44,9 +44,11 @@ class FileError(EntityErrors):
 
 	def rowErrorsCount (self):
 		row_err_cnt = 0
-		for d in self.entity.rows.values():
-			if (d.error.errorsExist()):
-				row_err_cnt += 1
+		# verify that rows object exists (it can be a case that rows were not instantiated yet due to earlier errors with file processing
+		if self.entity.rows:
+			for d in self.entity.rows.values():
+				if (d.error.errorsExist()):
+					row_err_cnt += 1
 		return row_err_cnt
 
 	def getErrorsToStr(self):

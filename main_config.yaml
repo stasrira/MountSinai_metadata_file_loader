@@ -1,0 +1,36 @@
+DB:
+    #dev conn string: Driver={SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;User=mt_internal_user;Password=se@lf0n1nt3rn@l
+    #prod conn string: Driver={SQL Server};Server=10.160.20.65\SSQL_2016;Database=dw_motrpac;User=mt_internal_user;Password=se@lf0n1nt3rn@l
+    #DB connection string
+    mdb_conn_str: Driver={SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;User=mt_internal_user;Password=se@lf0n1nt3rn@l
+    # name of the stored proc to be used to load samples to DB
+    mdb_sql_proc_load_sample: exec usp_load_single_sample @study_id = {study_id}, @sample_id ='{sample_id}', @json ='{smpl_json}', @dict_json='{dict_json}', @dict_path='{dict_path}', @filepath='{filepath}', @dict_update={dict_update}, @samlpe_update={samlpe_update}
+
+    # name of field templates for updating of stored procedure parameters (specified in "mdb_sql_proc_load_sample")
+    fld_tmpl_study_id: '{study_id}'
+    fld_tmpl_sample_id: '{sample_id}'
+    fld_tmpl_row_json: '{smpl_json}'
+    fld_tmpl_dict_json: '{dict_json}'
+    fld_tmpl_dict_path: '{dict_path}'
+    fld_tmpl_filepath: '{filepath}'
+    fld_tmpl_dict_update: '{dict_update}'
+    fld_tmpl_samlpe_update: '{samlpe_update}'
+
+Location:
+    # path to the folder where all data files are located
+    data_folder: E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/DataFiles
+
+Logging:
+    #main log - log created by the main application
+    #file log - log created for each processed file
+
+    #defines log levels to be used for "main" and "file" logs. Usual values are INFO and DEBUG
+    main_log_level: INFO
+    file_log_level: INFO
+
+    #name for the each type of log
+    main_log_name: main_log
+    file_log_name: file_processing_log
+
+    #default name of the local (per study) config file
+    default_study_config: study.cfg.yaml

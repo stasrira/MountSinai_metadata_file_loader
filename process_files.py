@@ -4,29 +4,37 @@ import sys
 import os
 from os import walk
 import time
-#import logging
 import traceback
 import mdl_logging as ml
+import main_cfg as mc
+import global_const as gc
 
-common_logger_name = 'main_log'
-logging_level = 'DEBUG'
-#CUR_FILE_LOGGER = None
+# main_config_file = 'main_config.yaml'
+
+#common_logger_name = 'main_log'
+#logging_level = 'DEBUG'
+
 
 # if executed by itself, do the following
 if __name__ == '__main__':
 
-    '''
-    ts = time.localtime()
-    print(time.strftime("%Y%m%d_%H%M%S", ts))
+    # load main config file and get required values
+    #m_cfg = mc.load_yaml_config(gc.main_config_file)
+    m_cfg = mc.ConfigData(gc.main_config_file)
 
-    sys.exit()
-    '''
+    print ('m_cfg = {}'.format(m_cfg.cfg))
+    # assign values
+    # common_logger_name = mc.get_cfg_value(m_cfg,'Logging', 'main_log_name')
+    # logging_level = mc.get_cfg_value(m_cfg, 'Logging', 'main_log_level')
+    # datafiles_path = mc.get_cfg_value(m_cfg, 'Location', 'data_folder')
+    common_logger_name = m_cfg.get_value('Logging/main_log_name')
+    logging_level = m_cfg.get_value('Logging/main_log_level')
+    datafiles_path = m_cfg.get_value('Location/data_folder')
 
-    datafiles_path = 'E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/DataFiles'
+    #datafiles_path = 'E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/DataFiles'
     df_path = Path(datafiles_path)
 
     # get current location of the script and create Log folder
-
     wrkdir = Path(os.path.dirname(os.path.abspath(__file__))) / 'Logs'
     lg_filename = time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log'
 
@@ -52,7 +60,8 @@ if __name__ == '__main__':
 
             fl_proc_cnt = 0
             for fl in proc_files:
-                if fl[-4:] != '.cfg':
+                l = len(gc.default_study_config_file_ext) # 9
+                if fl[-l:] != gc.default_study_config_file_ext: # '.cfg.yaml':
                     try:
                         fl_path = Path(st_path) / fl
                         #print('--------->Process file {}'.format(fl_path))
@@ -80,10 +89,12 @@ if __name__ == '__main__':
                         # identify if any errors were identified and set status variable accordingly
                         if not fl_ob.error.errorsExist() and fl_ob.error.rowErrorsCount() == 0:
                             fl_status = 'OK'
+                            _str = 'Processing status: "{}"; file: {}'.format(fl_status, fl_path)
                         else:
                             fl_status = 'ERROR'
+                            _str = 'Processing status: "{}". Check log file for the processed file: {}'.format(fl_status, fl_path)
 
-                        _str = 'Processing status: "{}"; file: {}'.format(fl_status, fl_path)
+
                         if fl_status == "OK":
                             mlog.info(_str)
                         else:
@@ -108,12 +119,14 @@ if __name__ == '__main__':
                     except Exception as ex:
                         # report an error to log file and proceed to next file.
                         mlog.error('Error "{}" occurred during processing file: {}\n{} '.format(ex, fl_path, traceback.format_exc()))
+                        raise
             mlog.info ('Number of files processed for study "{}" = {}'.format (dir, fl_proc_cnt))
 
     except Exception as ex:
         # report unexpected error to log file
         mlog.critical('Unexpected Error "{}" occurred during processing file: {}\n{} '.format(ex, os.path.abspath(__file__), traceback.format_exc()))
         # TODO raise error with a critical error
+        raise
 
     sys.exit()
 

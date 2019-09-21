@@ -1,7 +1,6 @@
 import os
 import logging
 
-
 def setup_logger (lg_name, lg_level, logPath, filename ):
     os.makedirs(logPath, exist_ok=True)
     logFile = logPath / filename # (filename + '_' + time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log')

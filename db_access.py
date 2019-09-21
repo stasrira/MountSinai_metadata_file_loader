@@ -1,21 +1,27 @@
 import pyodbc
 import traceback
+import main_cfg as mc
+import global_const as gc
 
 class MetadataDB():
-	cfg_db_conn = 'mdb_conn_str'  # name of the config parameter storing DB connection string
-	cfg_db_sql_proc = 'mdb_sql_proc_load_sample'  # name of the config parameter storing DB name of the stored proc
-	cfg_db_study_id = 'mdb_study_id'  # name of the config parameter storing value of the MDB study id
-	cfg_dict_path = 'dict_tmpl_fields_node' # name of the config parameter storing value of dictionary path to list of fields
-	cfg_db_allow_dict_update = 'mdb_allow_dict_update'  # name of the config parameter storing values for "allow dict updates"
-	cfg_db_allow_sample_update = 'mdb_allow_sample_update' # name of the config parameter storing values for "allow sample updates"
-	s_conn = ''
-	#s_sql_proc = ''
-	conn = None
-	cfg = None
+	'''
+	cfg_db_conn = 'DB/mdb_conn_str'  # name of the config parameter storing DB connection string
+	cfg_db_sql_proc = 'DB/mdb_sql_proc_load_sample'  # name of the config parameter storing DB name of the stored proc
+	cfg_db_study_id = 'DB/mdb_study_id'  # name of the config parameter storing value of the MDB study id
+	cfg_dict_path = 'DB/dict_tmpl_fields_node' # name of the config parameter storing value of dictionary path to list of fields
+	cfg_db_allow_dict_update = 'DB/mdb_allow_dict_update'  # name of the config parameter storing values for "allow dict updates"
+	cfg_db_allow_sample_update = 'DB/mdb_allow_sample_update' # name of the config parameter storing values for "allow sample updates"
+	'''
 
-	def __init__(self, obj_cfg):
-		self.cfg = obj_cfg
-		self.s_conn = self.cfg.getItemByKey(self.cfg_db_conn).strip()
+	s_conn = ''
+	# s_sql_proc = ''
+	conn = None
+	# cfg = None
+
+	def __init__(self, study_cfg):
+		self.cfg = mc.ConfigData(gc.main_config_file) # obj_cfg
+		self.s_conn = self.cfg.getItemByKey(gc.cfg_db_conn).strip()
+		self.study_cfg = study_cfg
 
 	def openConnection(self):
 		self.conn = pyodbc.connect(self.s_conn, autocommit=True)
@@ -29,21 +35,21 @@ class MetadataDB():
 
 		if not self.conn:
 			self.openConnection()
-		str_proc = self.cfg.getItemByKey(self.cfg_db_sql_proc).strip()
-		study_id = self.cfg.getItemByKey(self.cfg_db_study_id).strip()
-		dict_path = '$.' + self.cfg.getItemByKey(self.cfg_dict_path).strip()
-		dict_upd = self.cfg.getItemByKey(self.cfg_db_allow_dict_update).strip()
-		sample_upd = self.cfg.getItemByKey(self.cfg_db_allow_sample_update).strip()
+		str_proc = self.cfg.getItemByKey(gc.cfg_db_sql_proc).strip()
+		study_id = self.study_cfg.getItemByKey(gc.cfg_db_study_id).strip()
+		dict_path = '$.' + self.study_cfg.getItemByKey(gc.cfg_dict_path).strip()
+		dict_upd = self.study_cfg.getItemByKey(gc.cfg_db_allow_dict_update).strip()
+		sample_upd = self.study_cfg.getItemByKey(gc.cfg_db_allow_sample_update).strip()
 
 		#prepare stored proc string to be executed
-		str_proc = str_proc.replace('{study_id}', study_id)
-		str_proc = str_proc.replace('{sample_id}', sample_id)
-		str_proc = str_proc.replace('{smpl_json}', row_json)
-		str_proc = str_proc.replace('{dict_json}', dict_json)
-		str_proc = str_proc.replace('{dict_path}', dict_path)
-		str_proc = str_proc.replace('{filepath}', filepath)
-		str_proc = str_proc.replace('{dict_update}', dict_upd)
-		str_proc = str_proc.replace('{samlpe_update}', sample_upd)
+		str_proc = str_proc.replace(self.cfg.getItemByKey(gc.cfg_fld_tmpl_study_id), study_id) # '{study_id}'
+		str_proc = str_proc.replace(self.cfg.getItemByKey(gc.cfg_fld_tmpl_sample_id), sample_id) # '{sample_id}'
+		str_proc = str_proc.replace(self.cfg.getItemByKey(gc.cfg_fld_tmpl_row_json), row_json) # '{smpl_json}'
+		str_proc = str_proc.replace(self.cfg.getItemByKey(gc.cfg_fld_tmpl_dict_json), dict_json) # '{dict_json}'
+		str_proc = str_proc.replace(self.cfg.getItemByKey(gc.cfg_fld_tmpl_dict_path), dict_path) # '{dict_path}'
+		str_proc = str_proc.replace(self.cfg.getItemByKey(gc.cfg_fld_tmpl_filepath), filepath) # '{filepath}'
+		str_proc = str_proc.replace(self.cfg.getItemByKey(gc.cfg_fld_tmpl_dict_upd), dict_upd) # '{dict_update}'
+		str_proc = str_proc.replace(self.cfg.getItemByKey(gc.cfg_fld_tmpl_sample_upd), sample_upd) # '{samlpe_update}'
 
 		# get currrent file_processing_log
 		file.logger.debug('SQL Procedure call = {}'.format(str_proc))

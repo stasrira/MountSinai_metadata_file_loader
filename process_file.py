@@ -1,4 +1,4 @@
-import pyodbc
+# import pyodbc
 import sys
 import os
 import time
@@ -11,9 +11,17 @@ import file_errors as ferr # custom library containing all error processing rela
 import db_access as db # custom library containing all database related classes
 import logging
 import mdl_logging as ml
+import main_cfg as mc
+import global_const as gc
 
-common_logger_name = 'file_processing_log'
-logging_level = 'INFO'
+# common_logger_name = 'file_processing_log'
+# logging_level = 'INFO'
+
+class StudyConfig:
+	config_loc = None
+	config_glb = None
+	study_logger_name =  ''# 'file_processing_log'
+	study_logging_level = '' #'INFO'
 
 
 class FieldIdMethod:
@@ -56,7 +64,7 @@ class File:
 
 	def setup_logger(self, wrkdir, filename):
 
-		lg = ml.setup_logger(common_logger_name, logging_level,
+		lg = ml.setup_logger(StudyConfig.study_logger_name, StudyConfig.study_logging_level,
 					Path(wrkdir) / 'Logs',
 					filename + '_' + time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log')
 
@@ -65,7 +73,7 @@ class File:
 
 	def getFileContent (self):
 		if not self.logger:
-			loc_log = logging.getLogger(common_logger_name)
+			loc_log = logging.getLogger(StudyConfig.study_logger_name)
 		else:
 			loc_log = self.logger
 
@@ -151,32 +159,48 @@ class ConfigFile(File):
 		else:
 			return None
 
-	def getAllItems(self, item_key):
-		if not self.config_items:
-			self.loadConfigSettings()
-		return self.config_items
-
 # metadata text file class
 class MetaFileText(File):
 	cfg_file = None
 	file_dict = None # OrderedDict()
 	rows = None # OrderedDict()
 
-	def __init__(self, filepath, cfg_filepath = '', file_type = 1, file_delim = ','):
+	def __init__(self, filepath, cfg_path = '', file_type = 1, file_delim = ','):
 		File.__init__(self, filepath, file_type, file_delim)
 
 		self.logger = self.setup_logger(self.wrkdir, self.filename)
 		self.logger.info('Start working with file {}'.format(filepath))
 
 		self.logger.info('Loading config file.')
-		cfg_file = self.getConfigInfo(cfg_filepath)
+		# identify name of the config file for a study
+		if len(cfg_path) == 0:
+			cfg_path = Path(self.wrkdir) / gc.default_study_config_file
+
+		if self.fileExists(cfg_path):
+			loadConfiguration(self, cfg_path)
+			self.cfg_file = StudyConfig.config_loc
+			self.file_dict = OrderedDict()
+			self.rows = OrderedDict()
+		else:
+			_str = 'Study configuration file "{}" does not exist, configuration loading was aborted.'.format(cfg_path)
+			self.error.addError(_str)
+			self.logger.error(_str)
+
+		# self.cfg_file = StudyConfig.config_loc
+
+
+
+		'''
+		cfg_file = self.getConfigInfo('') # cfg_filepath
 		if not cfg_file.loaded:
 			# report error for for failed config file loading
 			_str = 'Neither the provided config file "{}" nor default "config.cfg" file could not be loaded.'.format(cfg_filepath)
 			self.error.addError(_str)
 			self.logger.error(_str)
-		self.file_dict = OrderedDict()
-		self.rows = OrderedDict()
+		'''
+
+		# self.file_dict = OrderedDict()
+		# self.rows = OrderedDict()
 
 	# read headers of the file and create a dictionary for it
 	# dictionary for creating files should preserve columns order
@@ -228,19 +252,23 @@ class MetaFileText(File):
 		return json.dumps(dict) #convert received dictionary to JSON
 
 	def getConfigInfo(self, cfg_file_path = ''):
+		return StudyConfig.config_loc
+		'''
 		if not self.cfg_file:
 			if str(cfg_file_path).strip() == "":
 				# if config file path is blank, an attempt to use "config.cfg" file located in the current file folder will be used
 				cfg_file_path = Path(self.wrkdir) / "config.cfg"
 			self.cfg_file = ConfigFile(cfg_file_path, 1)  # config file will use ':' by default
 		return self.cfg_file
+		'''
 
 	def configValueListSeparator(self):
 		val_delim = self.getConfigInfo().getItemByKey('config_value_list_separator') # read config file to get "value list separator"
 		#self.logger.debug('configValueListSeparator() => val_delim = "{}"'.format(val_delim))
 		if not val_delim:
 			val_delim = ''
-		return val_delim if len(val_delim.strip()) > 0 else ',' # if retrieved value is not blank, return it; otherwise return ',' as a default value
+		# if retrieved value is not blank, return it; otherwise return ',' as a default value
+		return val_delim if len(val_delim.strip()) > 0 else gc.default_config_value_list_separator # ','
 
 	# this will convert each row to a JSON ready dictionary based on the headers of the file
 	def getFileRow(self, rownum):
@@ -424,7 +452,7 @@ class MetaFileText(File):
 
 	def processFile(self):
 		# validate file for "file" level errors (assuming that config file was loaded)
-		if self.cfg_file.loaded:
+		if self.cfg_file and self.cfg_file.loaded:
 			self._validateMandatoryFieldsExist()
 			self._validateSampleIDFields()
 
@@ -501,15 +529,41 @@ class MetaFileExcel(MetaFileText):
 	# rows = None  # OrderedDict()
 	sheet_name = None
 
-	def __init__(self, filepath, cfg_filepath='', file_type=2, sheet_name = ''):
+	def __init__(self, filepath, cfg_path = '', file_type=2, sheet_name = ''):
+
+		#loadConfiguration (main_cfg_obj) # load global and local configureations
+
 		File.__init__(self, filepath, file_type)
 
 		self.logger = self.setup_logger(self.wrkdir, self.filename)
 		self.logger.info('Start working with file {}'.format(filepath))
 
 		self.logger.info('Loading config file.')
+		# identify name of the config file for a study
+		if len(cfg_path) == 0:
+			cfg_path = Path(self.wrkdir) / gc.default_study_config_file
+
+		if self.textFileExists(cfg_path):
+			loadConfiguration(self, cfg_path)
+			self.cfg_file = StudyConfig.config_loc
+			self.file_dict = OrderedDict()
+			self.rows = OrderedDict()
+
+			self.sheet_name = ''
+			# self.sheet_name = sheet_name.strip()
+			if not self.sheet_name or len(self.sheet_name) == 0:
+				# if sheet name was not passed as a parameter, try to get it from config file
+				self.sheet_name = self.cfg_file.getItemByKey(gc.study_excel_wk_sheet_name) # 'wk_sheet_name'
+			# print (self.sheet_name)
+			self.logger.info('Sheet name that data will be loaded from: "{}"'.format(self.sheet_name))
+		else:
+			_str = 'Study configuration file "{}" does not exist, configuration loading was aborted.'.format(cfg_path)
+			self.error.addError(_str)
+			self.logger.error(_str)
+
+		'''	
 		# self.cfg_file = None
-		cfg_file = self.getConfigInfo(cfg_filepath)
+		cfg_file = self.getConfigInfo ('') # '(cfg_filepath)
 		if not cfg_file.loaded:
 			# report error for for failed config file loading
 			_str = 'Neither the provided config file "{}" nor default "config.cfg" file could not be loaded.'.format(cfg_filepath)
@@ -525,6 +579,7 @@ class MetaFileExcel(MetaFileText):
 			self.sheet_name = self.cfg_file.getItemByKey('wk_sheet_name')
 			# print (self.sheet_name)
 		self.logger.info('Sheet name that data will be loaded from: "{}"'.format(self.sheet_name))
+		'''
 
 	def getFileContent (self):
 		if not self.lineList:
@@ -586,11 +641,15 @@ class MetaFileExcel(MetaFileText):
 				self.loaded = False
 		return self.lineList
 
+	def textFileExists(self, fn):
+		return MetaFileText.fileExists(self, fn)
+
 	def fileExists(self, fn):
 		try:
 			wb = xlrd.open_workbook(fn)
 			return 1
-		except IOError:
+		except Exception as ex: # IOError
+			# print (ex)
 			return 0
 
 class Row ():
@@ -683,8 +742,39 @@ class Row ():
 			self.file.logger.error(_str)
 			self.file.logger.debug(sys.exc_info()[1])
 
-		self.__sample_id = smp_evaled.strip()
+		self.__sample_id = str(smp_evaled).strip()
 		return self.__sample_id
+
+def loadConfiguration (fl_class, loc_cfg_path):
+	# load global configuration
+
+	#loc_log = logging.getLogger(StudyConfig.study_logger_name)
+	m_cfg = mc.ConfigData(gc.main_config_file)
+	m_logger_name = m_cfg.get_value('Logging/main_log_name')
+	m_logger = logging.getLogger(m_logger_name)
+
+	m_logger.debug('Loading Global config file {} for file: {}'.format(gc.main_config_file, fl_class.filepath))
+	StudyConfig.config_glb = mc.ConfigData(gc.main_config_file)
+
+	m_logger.info('Loading Study config file {} for file: {}'.format(loc_cfg_path, fl_class.filepath))
+	# load local configuration
+	try:
+		StudyConfig.config_loc = mc.ConfigData(loc_cfg_path)
+	except Exception as ex:
+		m_logger.error('Error "{}" occurred during loading study config file "{}"\n{}'.format(
+			ex, loc_cfg_path, traceback.format_exc()))
+		#raise
+		return False
+
+	#load global logging setting
+	StudyConfig.study_logger_name = StudyConfig.config_glb.get_value(gc.study_logger_name_cfg_path)
+	StudyConfig.study_logging_level = StudyConfig.config_glb.get_value(gc.study_logging_level_cfg_path)
+
+	return True
+
+
+	# populate values from local config file
+
 
 # if executed by itself, do the following
 if __name__ == '__main__':
