@@ -620,7 +620,11 @@ class MetaFileExcel(MetaFileText):
 						cell_value = cell.value
 						# take care of number and dates received from Excel and converted to float by default
 						if cell.ctype == 2 and int(cell_value) == cell_value:
+							# the value is integer
 							cell_value = str(int(cell_value))
+						elif cell.ctype == 2:
+							# the value is float
+							cell_value = str(cell_value)
 						# convert date back to human readable date format
 						# print ('cell_value = {}'.format(cell_value))
 						if cell.ctype == 3:
@@ -730,7 +734,7 @@ class Row ():
 					smp_val = None
 
 				if str(smp_val) == sf.strip():
-					sid = sid.replace('{{{}}}'.format(str(smp_val)), cnt)
+					sid = sid.replace('{{{}}}'.format(str(smp_val)), '"' + cnt + '"')
 
 		self.file.logger.debug ('Row #{}. Expression for sample id evaluation: "{}"'.format(self.row_number, sid))
 		try:
@@ -741,6 +745,9 @@ class Row ():
 			self.error.addError(_str)
 			self.file.logger.error(_str)
 			self.file.logger.debug(sys.exc_info()[1])
+			smp_evaled = ''
+
+		# TODO: add validation for duplicated Sample IDs. If duplication is found, reject the row.
 
 		self.__sample_id = str(smp_evaled).strip()
 		return self.__sample_id
