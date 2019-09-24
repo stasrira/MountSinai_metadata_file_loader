@@ -1,7 +1,7 @@
 import os
 import logging
 
-def setup_logger (lg_name, lg_level, logPath, filename ):
+def setup_logger_common (lg_name, lg_level, logPath, filename ):
     os.makedirs(logPath, exist_ok=True)
     logFile = logPath / filename # (filename + '_' + time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log')
 
@@ -35,5 +35,5 @@ def setup_logger (lg_name, lg_level, logPath, filename ):
     return out
 
 
-def deactivate_logger (logger, handler):
+def deactivate_logger_common (logger, handler):
     logger.removeHandler(handler)

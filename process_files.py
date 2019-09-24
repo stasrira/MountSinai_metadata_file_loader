@@ -1,32 +1,22 @@
-import process_file as pf
+from file_load import MetaFileText, MetaFileExcel
 from pathlib import Path
 import sys
 import os
 from os import walk
 import time
 import traceback
-import mdl_logging as ml
-import main_cfg as mc
-import global_const as gc
-
-# main_config_file = 'main_config.yaml'
-
-#common_logger_name = 'main_log'
-#logging_level = 'DEBUG'
-
+from utils.mdl_logging import setup_logger_common, deactivate_logger_common
+from utils import ConfigData
+from utils import global_const as gc
 
 # if executed by itself, do the following
 if __name__ == '__main__':
 
     # load main config file and get required values
-    #m_cfg = mc.load_yaml_config(gc.main_config_file)
-    m_cfg = mc.ConfigData(gc.main_config_file)
+    m_cfg = ConfigData(gc.main_config_file)
 
-    print ('m_cfg = {}'.format(m_cfg.cfg))
+    # print ('m_cfg = {}'.format(m_cfg.cfg))
     # assign values
-    # common_logger_name = mc.get_cfg_value(m_cfg,'Logging', 'main_log_name')
-    # logging_level = mc.get_cfg_value(m_cfg, 'Logging', 'main_log_level')
-    # datafiles_path = mc.get_cfg_value(m_cfg, 'Location', 'data_folder')
     common_logger_name = m_cfg.get_value('Logging/main_log_name')
     logging_level = m_cfg.get_value('Logging/main_log_level')
     datafiles_path = m_cfg.get_value('Location/data_folder')
@@ -38,7 +28,7 @@ if __name__ == '__main__':
     wrkdir = Path(os.path.dirname(os.path.abspath(__file__))) / 'Logs'
     lg_filename = time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log'
 
-    lg = ml.setup_logger(common_logger_name, logging_level, wrkdir, lg_filename) #logging_level
+    lg = setup_logger_common(common_logger_name, logging_level, wrkdir, lg_filename) #logging_level
     mlog = lg['logger']
 
     mlog.info('Start processing files in "{}"'.format(df_path))
@@ -69,11 +59,11 @@ if __name__ == '__main__':
                         if fl[-4:] == '.xls' or fl[-5:] == '.xlsx':
                             # identify excel file and create appropriate object to handle it
                             mlog.info('File {} was identified as Excel file'.format(fl_path))
-                            fl_ob = pf.MetaFileExcel(fl_path)
+                            fl_ob = MetaFileExcel(fl_path)
                         else:
                             # create an object to process text files
                             mlog.info('File {} was identified as Text file'.format(fl_path))
-                            fl_ob = pf.MetaFileText(fl_path)
+                            fl_ob = MetaFileText(fl_path)
 
                         # save timestamp of beginning of the file processing
                         ts = time.strftime("%Y%m%d_%H%M%S", time.localtime())

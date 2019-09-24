@@ -1,7 +1,7 @@
 import pyodbc
 import traceback
-import main_cfg as mc
-import global_const as gc
+from .configuration import ConfigData
+from utils import global_const as gc
 
 class MetadataDB():
 	'''
@@ -14,12 +14,10 @@ class MetadataDB():
 	'''
 
 	s_conn = ''
-	# s_sql_proc = ''
 	conn = None
-	# cfg = None
 
 	def __init__(self, study_cfg):
-		self.cfg = mc.ConfigData(gc.main_config_file) # obj_cfg
+		self.cfg = ConfigData(gc.main_config_file) # obj_cfg
 		self.s_conn = self.cfg.getItemByKey(gc.cfg_db_conn).strip()
 		self.study_cfg = study_cfg
 
