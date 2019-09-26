@@ -1,4 +1,4 @@
 from .db_access import *
 from .global_const import *
-from .mdl_logging import *
+from .logging import *
 from .configuration import *

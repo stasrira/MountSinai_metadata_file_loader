@@ -5,7 +5,7 @@ import os
 from os import walk
 import time
 import traceback
-from utils.mdl_logging import setup_logger_common
+from utils.logging import setup_logger_common
 from utils import ConfigData
 from utils import global_const as gc
 
