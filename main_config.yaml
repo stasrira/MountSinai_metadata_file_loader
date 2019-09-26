@@ -18,7 +18,11 @@ DB:
 
 Location:
     # path to the folder where all data files are located
-    data_folder: E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/DataFiles
+    data_folder: E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/datafiles
+
+    #name of the folder where all logs files will be stored
+    log_folder_name: logs
+    processed_folder_name: processed
 
 Logging:
     #main log - log created by the main application
@@ -32,5 +36,5 @@ Logging:
     main_log_name: main_log
     file_log_name: file_processing_log
 
-    #default name of the local (per study) config file
-    default_study_config: study.cfg.yaml
+
+

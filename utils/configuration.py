@@ -1,5 +1,6 @@
 import yaml
 
+
 class ConfigData:
 
     def __init__(self, cfg_path):
@@ -8,7 +9,7 @@ class ConfigData:
             self.cfg = yaml.load(ymlfile)
         self.loaded = True
 
-    def get_value (self, yaml_path, delim = '/'):
+    def get_value(self, yaml_path, delim='/'):
         path_elems = yaml_path.split(delim)
 
         # loop through the path to get the required value
@@ -18,8 +19,9 @@ class ConfigData:
 
         return val
 
-    def getItemByKey (self, key_name):
+    def get_item_by_key(self, key_name):
         return str(self.get_value(key_name))
+
 
 '''    
 for section in cfg:
@@ -30,5 +32,7 @@ for section in cfg:
 #print(cfg['DB'])
 #print(cfg['Logging'])
 '''
-# ym = load_yaml_config('E:\MounSinai\MoTrPac_API\ProgrammaticConnectivity\MountSinai_metadata_file_loader\DataFiles\study01\study.cfg_1.yaml')
+# ym = load_yaml_config(
+# 'E:\MounSinai\MoTrPac_API\ProgrammaticConnectivity\
+# MountSinai_metadata_file_loader\DataFiles\study01\study.cfg_1.yaml')
 # print (ym)
