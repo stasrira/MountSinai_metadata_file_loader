@@ -26,7 +26,7 @@ class MetaFileExcel(MetaFileText):
         self.logger.info('Loading config file.')
         # identify name of the config file for a study
         if len(cfg_path) == 0:
-            cfg_path = Path(self.wrkdir) / gc.default_study_config_file
+            cfg_path = Path(self.wrkdir) / gc.DEFAULT_STUDY_CONFIG_FILE
 
         if self.text_file_exists(cfg_path):
             load_configuration(self, cfg_path)
@@ -38,7 +38,7 @@ class MetaFileExcel(MetaFileText):
             self.sheet_name = sheet_name.strip()
             if not self.sheet_name or len(self.sheet_name) == 0:
                 # if sheet name was not passed as a parameter, try to get it from config file
-                self.sheet_name = self.cfg_file.get_item_by_key(gc.study_excel_wk_sheet_name)  # 'wk_sheet_name'
+                self.sheet_name = self.cfg_file.get_item_by_key(gc.STUDY_EXCEL_WK_SHEET_NAME)  # 'wk_sheet_name'
             # print (self.sheet_name)
             self.logger.info('Sheet name that data will be loaded from: "{}"'.format(self.sheet_name))
         else:

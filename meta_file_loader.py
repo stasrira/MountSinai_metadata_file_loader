@@ -13,15 +13,15 @@ from utils import global_const as gc
 if __name__ == '__main__':
 
     # load main config file and get required values
-    m_cfg = ConfigData(gc.main_config_file)
+    m_cfg = ConfigData(gc.MAIN_CONFIG_FILE)
 
     # print ('m_cfg = {}'.format(m_cfg.cfg))
     # assign values
     common_logger_name = m_cfg.get_value('Logging/main_log_name')
     logging_level = m_cfg.get_value('Logging/main_log_level')
     datafiles_path = m_cfg.get_value('Location/data_folder')
-    log_folder_name = gc.log_folder_name
-    processed_folder_name = gc.processed_folder_name
+    log_folder_name = gc.LOG_FOLDER_NAME
+    processed_folder_name = gc.PROCESSED_FOLDER_NAME
 
     # datafiles_path = 'E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/DataFiles'
     df_path = Path(datafiles_path)
@@ -53,8 +53,8 @@ if __name__ == '__main__':
             fl_proc_cnt = 0
             for fl in proc_files:
                 fl_path = Path(st_path) / fl
-                ln = len(gc.default_study_config_file_ext)  # 9
-                if fl[-ln:] != gc.default_study_config_file_ext:  # '.cfg.yaml':
+                ln = len(gc.DEFAULT_STUDY_CONFIG_FILE_EXT)  # 9
+                if fl[-ln:] != gc.DEFAULT_STUDY_CONFIG_FILE_EXT:  # '.cfg.yaml':
                     try:
                         # print('--------->Process file {}'.format(fl_path))
                         mlog.info('File {} was selected for processing.'.format(fl_path))

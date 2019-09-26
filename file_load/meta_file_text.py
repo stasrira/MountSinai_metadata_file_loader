@@ -25,7 +25,7 @@ class MetaFileText(File):
         self.logger.info('Loading config file.')
         # identify name of the config file for a study
         if len(cfg_path) == 0:
-            cfg_path = Path(self.wrkdir) / gc.default_study_config_file
+            cfg_path = Path(self.wrkdir) / gc.DEFAULT_STUDY_CONFIG_FILE
 
         if self.file_exists(cfg_path):
             load_configuration(self, cfg_path)
@@ -98,7 +98,7 @@ class MetaFileText(File):
         if not val_delim:
             val_delim = ''
         # if retrieved value is not blank, return it; otherwise return ',' as a default value
-        return val_delim if len(val_delim.strip()) > 0 else gc.default_config_value_list_separator  # ','
+        return val_delim if len(val_delim.strip()) > 0 else gc.DEFAULT_CONFIG_VALUE_LIST_SEPARATOR  # ','
 
     # this will convert each row to a JSON ready dictionary based on the headers of the file
     def get_file_row(self, rownum):

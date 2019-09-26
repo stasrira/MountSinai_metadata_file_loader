@@ -20,12 +20,12 @@ class FieldIdMethod:
 def load_configuration(fl_class, loc_cfg_path):
     # load global configuration
 
-    m_cfg = ConfigData(gc.main_config_file)
+    m_cfg = ConfigData(gc.MAIN_CONFIG_FILE)
     m_logger_name = m_cfg.get_value('Logging/main_log_name')
     m_logger = logging.getLogger(m_logger_name)
 
-    m_logger.debug('Loading Global config file {} for file: {}'.format(gc.main_config_file, fl_class.filepath))
-    StudyConfig.config_glb = ConfigData(gc.main_config_file)
+    m_logger.debug('Loading Global config file {} for file: {}'.format(gc.MAIN_CONFIG_FILE, fl_class.filepath))
+    StudyConfig.config_glb = ConfigData(gc.MAIN_CONFIG_FILE)
 
     m_logger.info('Loading Study config file {} for file: {}'.format(loc_cfg_path, fl_class.filepath))
     # load local configuration
@@ -38,7 +38,7 @@ def load_configuration(fl_class, loc_cfg_path):
         return False
 
     # load global logging setting
-    StudyConfig.study_logger_name = StudyConfig.config_glb.get_value(gc.study_logger_name_cfg_path)
-    StudyConfig.study_logging_level = StudyConfig.config_glb.get_value(gc.study_logging_level_cfg_path)
+    StudyConfig.study_logger_name = StudyConfig.config_glb.get_value(gc.STUDY_LOGGER_NAME_CFG_PATH)
+    StudyConfig.study_logging_level = StudyConfig.config_glb.get_value(gc.STUDY_LOGGING_LEVEL_CFG_PATH)
 
     return True

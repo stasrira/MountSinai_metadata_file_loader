@@ -42,7 +42,7 @@ class File:
 
     def setup_logger(self, wrkdir, filename):
 
-        log_folder_name = gc.log_folder_name
+        log_folder_name = gc.LOG_FOLDER_NAME
 
         lg = setup_logger_common(StudyConfig.study_logger_name, StudyConfig.study_logging_level,
                                  Path(wrkdir) / log_folder_name,
