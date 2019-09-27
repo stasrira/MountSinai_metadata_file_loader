@@ -3,7 +3,7 @@ import json
 from collections import OrderedDict
 from file_load.file_error import RowError
 from utils import MetadataDB  # database connectivity related class
-from utils.logging import deactivate_logger_common
+from utils.log_utils import deactivate_logger_common
 from utils import global_const as gc
 from .file import File
 from .file_utils import StudyConfig, FieldIdMethod, load_configuration

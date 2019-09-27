@@ -1,20 +1,6 @@
-# Import smtplib for the actual sending function
-import smtplib, ssl
-#import os
-#from pathlib import Path
-# Import the email modules we'll need
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage
-
-import traceback
-
 from utils import common as cm
 from utils import ConfigData
 from utils import global_const as gc
-from utils import logging
-
-'''
 import yagmail
 
 def send_yagmail(emails_to, subject, message, email_from = None, attachment_path =  None, smtp_server = None):
@@ -26,19 +12,24 @@ def send_yagmail(emails_to, subject, message, email_from = None, attachment_path
     if not smtp_server:
         smtp_server = m_cfg.get_value('Email/smtp_server')
     
-    receiver = emails_to  # 'stasrirak.ms@gmail.com, stasrira@yahoo.com, stas.rirak@mssm.edu'
-    body = "Hello there from Yagmail"
+    # receiver = emails_to  # 'stasrirak.ms@gmail.com, stasrira@yahoo.com, stas.rirak@mssm.edu'
+    body = message
     filename = attachment_path  # 'test.png'
     
-    yag = yagmail.SMTP(smtp_server)
+    yag = yagmail.SMTP(email_from,
+                       host=smtp_server,
+                       smtp_skip_login=True,
+                       smtp_ssl=False,
+                       soft_email_validation=False,
+                       port=25)
     yag.send(
-        to=receiver,
-        subject="Yagmail test with attachment",
+        to=emails_to,
+        subject=subject,
         contents=body, 
         attachments=filename,
     )
-'''
 
+'''
 def send_email (emails_to, subject, message, email_from = None, attachment_path =  None, smtp_server = None):
     # ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -88,7 +79,10 @@ def send_email (emails_to, subject, message, email_from = None, attachment_path 
         #              .format(ex, os.path.abspath(__file__), traceback.format_exc()))
         raise
     """
+'''
 
-send_email ('stasrirak.ms@gmail.com, stasrira@yahoo.com, stas.rirak@mssm.edu', 'Test Email #4.2', 'Body of the test email??.', None, 'test.png')
+# if executed by itself, do the following
+if __name__ == '__main__':
+    # send_email ('stasrirak.ms@gmail.com, stasrira@yahoo.com, stas.rirak@mssm.edu', 'Test Email #4.2', 'Body of the test email??.', None, 'test.png')
 
-# send_yagmail ('stasrirak.ms@gmail.com, stasrira@yahoo.com, stas.rirak@mssm.edu', 'Test Email #5', 'Body of the test email!!.', None, 'test.png')
+    send_yagmail ('stasrirak.ms@gmail.com, stasrira@yahoo.com, stas.rirak@mssm.edu', 'Test Email #5.3', '<font color ="blue">Body</font> of the <b>test</b> email!!.', None, 'test.png')

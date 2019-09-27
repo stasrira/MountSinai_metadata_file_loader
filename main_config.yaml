@@ -32,7 +32,7 @@ Logging:
     main_log_level: INFO
     file_log_level: INFO
 
-    #name for the each type of log
+    #name for the each type of log (moved to global_const.py)
     #main_log_name: main_log
     #file_log_name: file_processing_log
 

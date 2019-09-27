@@ -15,7 +15,7 @@ LOG_FOLDER_NAME = 'logs'
 PROCESSED_FOLDER_NAME = 'processed'
 
 # predefined paths in the main config file for various variables
-STUDY_LOGGER_NAME_CFG_PATH = 'Logging/file_log_name'
+# STUDY_LOGGER_NAME_CFG_PATH = 'Logging/file_log_name'
 STUDY_LOGGING_LEVEL_CFG_PATH = 'Logging/file_log_level'
 
 # default values for Study config file properties
