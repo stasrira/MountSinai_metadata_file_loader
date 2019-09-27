@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     # print ('m_cfg = {}'.format(m_cfg.cfg))
     # assign values
-    common_logger_name = m_cfg.get_value('Logging/main_log_name')
+    common_logger_name = gc.MAIN_LOG_NAME # m_cfg.get_value('Logging/main_log_name')
     logging_level = m_cfg.get_value('Logging/main_log_level')
     datafiles_path = m_cfg.get_value('Location/data_folder')
     log_folder_name = gc.LOG_FOLDER_NAME

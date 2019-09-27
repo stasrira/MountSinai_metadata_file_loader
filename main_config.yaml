@@ -33,8 +33,11 @@ Logging:
     file_log_level: INFO
 
     #name for the each type of log
-    main_log_name: main_log
-    file_log_name: file_processing_log
+    #main_log_name: main_log
+    #file_log_name: file_processing_log
 
-
+Email:
+    #default settings for sending emails
+    smtp_server: smtp.mssm.edu
+    default_from_email: stasrirak.ms@gmail.com
 
