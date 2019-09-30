@@ -5,9 +5,10 @@ import os
 from os import walk
 import time
 import traceback
-from utils.logging import setup_logger_common
+from utils.log_utils import setup_logger_common
 from utils import ConfigData
 from utils import global_const as gc
+from utils import send_email as email
 
 # if executed by itself, do the following
 if __name__ == '__main__':
@@ -17,7 +18,7 @@ if __name__ == '__main__':
 
     # print ('m_cfg = {}'.format(m_cfg.cfg))
     # assign values
-    common_logger_name = m_cfg.get_value('Logging/main_log_name')
+    common_logger_name = gc.MAIN_LOG_NAME # m_cfg.get_value('Logging/main_log_name')
     logging_level = m_cfg.get_value('Logging/main_log_level')
     datafiles_path = m_cfg.get_value('Location/data_folder')
     log_folder_name = gc.LOG_FOLDER_NAME
@@ -49,6 +50,9 @@ if __name__ == '__main__':
             (_, _, proc_files) = next(walk(Path(st_path)))
             mlog.info('Files presented (count = {}): "{}"'.format(len(proc_files), proc_files))
             # print ('Study st_dir files: {}'.format(proc_files))
+
+            email_msgs_study = []
+            email_attchms_study = []
 
             fl_proc_cnt = 0
             for fl in proc_files:
@@ -108,6 +112,28 @@ if __name__ == '__main__':
                         mlog.info('Processed file "{}" was moved and renamed as: "{}"'
                                   .format(fl_path, processed_dir / fl_processed_name))
 
+                        # preps for email notification
+                        email_msgs_study.append(
+                                    ('File <br/>"{}" <br/> was processed and moved/renamed to <br/> "{}".'
+                                     '<br/> <b>Errors summary:</b> '
+                                     '<br/> File level errors: {}'
+                                     '<br/> Row level errors: {}'
+                                     '<br/> <i>Log file location: <br/>"{}"</i>'
+                                     ''.format(fl_path,
+                                               processed_dir / fl_processed_name,
+                                               '<font color="red">Check Errors in the log file (attached)</font>'
+                                                    if fl_ob.error.errors_exist()
+                                                    else '<font color="green">No Errors</font> (the log file is attached)',
+                                               '<font color="red">Check Errors in the log file (attached)</font>'
+                                                    if fl_ob.error.row_errors_count()
+                                                    else '<font color="green">No Errors</font> (the log file is attached)',
+                                               fl_ob.log_handler.baseFilename)
+                                     )
+                        )
+                        email_attchms_study.append(fl_ob.log_handler.baseFilename)
+
+                        # print ('email_msgs_study = {}'.format(email_msgs_study))
+
                         fl_ob = None
                     except Exception as ex:
                         # report an error to log file and proceed to next file.
@@ -116,10 +142,38 @@ if __name__ == '__main__':
                         raise
             mlog.info('Number of files processed for study "{}" = {}'.format(st_dir, fl_proc_cnt))
 
+            if fl_proc_cnt>0:
+                # collect final details and send email about this study results
+                email_subject = 'Metadata files loading for study "{}"'.format(st_dir)
+                email_body = ('Number of files processed for study "{}": {}.'.format(st_dir, fl_proc_cnt)
+                                + '<br/><br/>'
+                                + '<br/><br/>'.join(email_msgs_study)
+                                )
+
+                # print ('email_subject = {}'.format(email_subject))
+                # print('email_body = {}'.format(email_body))
+
+                try:
+                    if m_cfg.get_value('Email/send_emails'):
+                        email.send_yagmail(
+                            emails_to = m_cfg.get_value('Email/sent_to_emails'),
+                            subject = email_subject,
+                            message = email_body,
+                            attachment_path = email_attchms_study
+                        )
+                except Exception as ex:
+                    # report unexpected error during sending emails to a log file and continue
+                    _str = 'Unexpected Error "{}" occurred during an attempt to send email upon ' \
+                           'finishing processing "{}" study: {}\n{} '\
+                        .format(ex, st_dir, os.path.abspath(__file__), traceback.format_exc())
+                    mlog.critical(_str)
+
+
     except Exception as ex:
         # report unexpected error to log file
-        mlog.critical('Unexpected Error "{}" occurred during processing file: {}\n{} '
-                      .format(ex, os.path.abspath(__file__), traceback.format_exc()))
+        _str = 'Unexpected Error "{}" occurred during processing file: {}\n{} '\
+            .format(ex, os.path.abspath(__file__), traceback.format_exc())
+        mlog.critical(_str)
         raise
 
     sys.exit()
