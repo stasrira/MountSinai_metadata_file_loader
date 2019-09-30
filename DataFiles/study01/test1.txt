@@ -1,4 +1,4 @@
 Col3, Col1, Col2, Col4, Col_Long_Name, Col11, Col41, Long Name With Spaces
-11,21,A31, xxx, Value 1,,,Value of column with spaces in header name 1
+11,40-21,A31, xxx, Value 1,,,Value of column with spaces in header name 1
 4A,5A,6A, yyyA, Value 2,,,Value of column with spaces in header name 2
 7,8,9, zzz, Value 3,,,Value of column with spaces in header name 3

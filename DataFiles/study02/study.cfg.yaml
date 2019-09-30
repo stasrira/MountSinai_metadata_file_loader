@@ -20,7 +20,9 @@ sample_id_fields: 1
 #expected values: "name" or "number"
 sample_id_method: number
 #python expression based on sample_id_fields config value; it will be used to form sample id value
-sample_id_expression: '{1}' #"'-'.join(['{4}','{2}']) ##'{Col4}'"
+sample_id_expression: "{1}" #"'-'.join(['{4}','{2}']) ##'{Col4}'"
+#identifies if validation is required - expected values
+sample_id_eval_required: False
 
 #metadata DB study id
 mdb_study_id: 6

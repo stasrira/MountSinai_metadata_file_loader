@@ -69,6 +69,10 @@ class Row:
         sid = cfg.get_item_by_key('sample_id_expression').strip()
         fields = cfg.get_item_by_key('sample_id_fields').split(delim)
         method = cfg.get_item_by_key('sample_id_method').strip()  # split(delim)[0].
+        try:
+            sid_eval_req = eval(cfg.get_item_by_key('sample_id_eval_required'))
+        except Exception as ex:
+            sid_eval_req = False
 
         for sf in fields:
             i = 0  # keeps field count
@@ -83,19 +87,38 @@ class Row:
                     smp_val = None
 
                 if str(smp_val) == sf.strip():
-                    sid = sid.replace('{{{}}}'.format(str(smp_val)), '"' + cnt + '"')
+                    # if match is found proceed here
+                    cnt = str(cnt).strip()
+                    if sid_eval_req:
+                        # if evaluation of the expression is required, proceed here.
+                        try:
+                            evl_cnt = eval(cnt)
+                            # this tests only values that can be evaluated as a number and after evaluation != source
+                            if evl_cnt != cnt and str(evl_cnt).isdigit():
+                                cnt = '"' + cnt + '"'
+                        except Exception as ex:
+                            # ignore errors raised during evaluation of the cnt, this can be a case for strings
+                            pass
 
-        self.file.logger.debug('Row #{}. Expression for sample id evaluation: "{}"'.format(self.row_number, sid))
-        try:
-            smp_evaled = eval(sid)  # attempt to evaluate expression for sample id
-        except Exception as ex:
-            # report an error if evaluation has failed.
-            _str = 'Error "{}" occurred during evaluating sample id expression: {}\n{} '.format(ex, sid,
-                                                                                                traceback.format_exc())
-            self.error.add_error(_str)
-            self.file.logger.error(_str)
-            self.file.logger.debug(sys.exc_info()[1])
-            smp_evaled = ''
+                    # insert cnt value into sid expression
+                    sid = sid.replace('{{{}}}'.format(str(smp_val)), cnt)
+                    # sid = sid.replace('{{{}}}'.format(str(smp_val)), str(cnt).strip())
+
+        self.file.logger.debug('Row #{}. Expression for sample id: "{}"; evaluation flag is set to "{}".'.format(self.row_number, sid, sid_eval_req))
+        if sid_eval_req:
+            #proceed here if evaluation is required
+            try:
+                smp_evaled = eval(sid)  # attempt to evaluate expression for sample id
+            except Exception as ex:
+                # report an error if evaluation has failed.
+                _str = 'Error "{}" occurred during evaluating sample id expression: {}\n{} '.format(ex, sid,
+                                                                                                    traceback.format_exc())
+                self.error.add_error(_str)
+                self.file.logger.error(_str)
+                self.file.logger.debug(sys.exc_info()[1])
+                smp_evaled = ''
+        else:
+            smp_evaled = sid
 
         self.__sample_id = str(smp_evaled).strip()
         return self.__sample_id
