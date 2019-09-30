@@ -150,15 +150,23 @@ if __name__ == '__main__':
                                 + '<br/><br/>'.join(email_msgs_study)
                                 )
 
-                print ('email_subject = {}'.format(email_subject))
-                print('email_body = {}'.format(email_body))
+                # print ('email_subject = {}'.format(email_subject))
+                # print('email_body = {}'.format(email_body))
 
-                email.send_yagmail(
-                    emails_to = m_cfg.get_value('Email/sent_to_emails'),
-                    subject = email_subject,
-                    message = email_body,
-                    attachment_path = email_attchms_study
-                )
+                try:
+                    if m_cfg.get_value('Email/send_emails'):
+                        email.send_yagmail(
+                            emails_to = m_cfg.get_value('Email/sent_to_emails'),
+                            subject = email_subject,
+                            message = email_body,
+                            attachment_path = email_attchms_study
+                        )
+                except Exception as ex:
+                    # report unexpected error during sending emails to a log file and continue
+                    _str = 'Unexpected Error "{}" occurred during an attempt to send email upon ' \
+                           'finishing processing "{}" study: {}\n{} '\
+                        .format(ex, st_dir, os.path.abspath(__file__), traceback.format_exc())
+                    mlog.critical(_str)
 
 
     except Exception as ex:
