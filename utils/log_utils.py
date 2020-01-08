@@ -1,7 +1,7 @@
 import os
 import logging
 
-
+# TODO: verify that proper value for lg_name and lg_level are being sent to this proc.
 def setup_logger_common(lg_name, lg_level, log_path, filename):
     os.makedirs(log_path, exist_ok=True)
     log_file = log_path / filename  # (filename + '_' + time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log')

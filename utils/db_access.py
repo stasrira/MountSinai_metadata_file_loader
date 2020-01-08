@@ -53,10 +53,10 @@ class MetadataDB:
         str_proc = str_proc.replace(self.cfg.get_item_by_key(gc.CFG_FLD_TMPL_SAMPLE_UPD), sample_upd)
         # '{samlpe_update}'
 
-        # get currrent file_processing_log
-        file.logger.debug('SQL Procedure call = {}'.format(str_proc))
+        file.logger.info('SQL Procedure call = {}'.format(str_proc))
         # print ('procedure (str_proc) = {}'.format(str_proc))
 
+        # TODO: if procedure execution does not fail but return back status saying "ERROR:", record an error for the row
         try:
             cursor = self.conn.cursor()
             cursor.execute(str_proc)

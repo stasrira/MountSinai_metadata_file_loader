@@ -37,6 +37,7 @@ def load_configuration(fl_class, loc_cfg_path):
         # raise
         return False
 
+    # TODO: verify that these setting are bing applied
     # load global logging setting
     StudyConfig.study_logger_name =  gc.FILE_LOG_NAME # StudyConfig.config_glb.get_value(gc.STUDY_LOGGER_NAME_CFG_PATH)
     StudyConfig.study_logging_level = StudyConfig.config_glb.get_value(gc.STUDY_LOGGING_LEVEL_CFG_PATH)

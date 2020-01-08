@@ -29,8 +29,8 @@ Logging:
     #file log - log created for each processed file
 
     #defines log levels to be used for "main" and "file" logs. Usual values are INFO and DEBUG
-    main_log_level: INFO
-    file_log_level: INFO
+    main_log_level: DEBUG
+    file_log_level: DEBUG
 
     #name for the each type of log (moved to global_const.py)
     #main_log_name: main_log

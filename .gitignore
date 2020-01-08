@@ -110,6 +110,4 @@ venv.bak/
 .idea/workspace.xml
 
 #processed folders
-/DataFiles/study01/Processed/
-/DataFiles/study02/Processed/
-/DataFiles/study03/
+/datafiles
