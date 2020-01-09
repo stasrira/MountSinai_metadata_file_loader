@@ -2,6 +2,7 @@ from file_load import MetaFileText, MetaFileExcel
 from pathlib import Path
 import sys
 import os
+import getpass
 from os import walk
 import time
 import traceback
@@ -34,7 +35,16 @@ if __name__ == '__main__':
     lg = setup_logger_common(common_logger_name, logging_level, wrkdir, lg_filename)  # logging_level
     mlog = lg['logger']
 
-    mlog.info('Start processing files in "{}"'.format(df_path))
+    mlog.info('Start processing files in "{}". '
+              'Expected user login: "{}", Effective user: "{}"  '.format(df_path, os.getlogin(), getpass.getuser()))
+
+    # TODO: Verify that target directory (df_path) is accessable for the current user (under which the app is running)
+    # TODO: Identify the user under which the app is running if the df_path is not accessable
+
+    if not os.path.exists(df_path):
+        mlog.error('Directory "{}" does not exist or not accessible for the current user. Aborting execution. '
+                   'Expected user login: "{}", Effective user: "{}"  '.format(df_path, os.getlogin(), getpass.getuser()))
+        exit(1)
 
     try:
 

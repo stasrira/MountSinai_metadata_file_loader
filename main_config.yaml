@@ -1,8 +1,8 @@
 DB:
     #dev conn string: Driver={SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;User=mt_internal_user;Password=se@lf0n1nt3rn@l
-    #prod conn string: Driver={SQL Server};Server=10.160.20.65\SSQL_2016;Database=dw_motrpac;User=mt_internal_user;Password=se@lf0n1nt3rn@l
-    #DB connection string
-    mdb_conn_str: Driver={SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;User=mt_internal_user;Password=se@lf0n1nt3rn@l
+    #prod conn string: Driver={ODBC Driver 17 for SQL Server};Server=10.160.20.65\SSQL_2016;Database=dw_motrpac;UID=mt_internal_user;PWD=se@lf0n1nt3rn@l
+    #    #DB connection string
+    mdb_conn_str: Driver={ODBC Driver 17 for SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;UID=mt_internal_user;PWD=se@lf0n1nt3rn@l # Driver={SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;User=mt_internal_user;Password=se@lf0n1nt3rn@l
     # name of the stored proc to be used to load samples to DB
     mdb_sql_proc_load_sample: exec usp_load_single_sample @study_id = {study_id}, @sample_id ='{sample_id}', @json ='{smpl_json}', @dict_json='{dict_json}', @dict_path='{dict_path}', @filepath='{filepath}', @dict_update={dict_update}, @samlpe_update={samlpe_update}
 
@@ -40,7 +40,7 @@ Email:
     #default settings for sending emails
     smtp_server: smtp.mssm.edu
     smtp_server_port: 25
-    default_from_email: stasrirak.ms@gmail.com
+    default_from_email: stas.rirak@mssm.edu
     sent_to_emails: stasrirak.ms@gmail.com, stasrira@yahoo.com
     send_emails: True # expected values: True, False
 
