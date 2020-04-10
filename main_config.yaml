@@ -18,7 +18,14 @@ DB:
 
 Location:
     # path to the folder where all data files are located
+    #local path
     data_folder: D:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/datafiles
+    # production path
+    # data_folder: J:\Metadata_Processing
+
+    ignore_files:
+        - ".DS_Store"
+        - "study.cfg.yaml"
 
     #name of the folder where all logs files will be stored
     log_folder_name: logs

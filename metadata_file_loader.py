@@ -22,6 +22,7 @@ if __name__ == '__main__':
     common_logger_name = gc.MAIN_LOG_NAME # m_cfg.get_value('Logging/main_log_name')
     logging_level = m_cfg.get_value('Logging/main_log_level')
     datafiles_path = m_cfg.get_value('Location/data_folder')
+    ignore_files = m_cfg.get_value('Location/ignore_files')
     log_folder_name = gc.LOG_FOLDER_NAME
     processed_folder_name = gc.PROCESSED_FOLDER_NAME
 
@@ -58,6 +59,12 @@ if __name__ == '__main__':
             mlog.info('Start processing study: "{}", full path: {}'.format(st_dir, st_path))
 
             (_, _, proc_files) = next(walk(Path(st_path)))
+            # filter out file that should be ignored
+            # ignore_files = ['.DS_Store']
+            proc_files = [file for file in proc_files
+                          # '~$' should filter out temp file created when excel is open
+                          if file not in ignore_files and not file.startswith('~$')]
+
             mlog.info('Files presented (count = {}): "{}"'.format(len(proc_files), proc_files))
             # print ('Study st_dir files: {}'.format(proc_files))
 
