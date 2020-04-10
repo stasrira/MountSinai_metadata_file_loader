@@ -6,6 +6,7 @@ from file_load.file_error import FileError
 from utils.log_utils import setup_logger_common
 from utils import global_const as gc
 from .file_utils import StudyConfig
+from csv import reader
 
 
 #  Text file class (used as a base)
@@ -22,7 +23,7 @@ class File:
     loaded = None
     logger = None
 
-    def __init__(self, filepath, file_type=1, file_delim=','):
+    def __init__(self, filepath, file_type=1, file_delim=',', replace_blanks_in_header = True):
         self.filepath = filepath
         self.wrkdir = os.path.dirname(os.path.abspath(filepath))
         self.filename = Path(os.path.abspath(filepath)).name
@@ -33,6 +34,8 @@ class File:
         self.__headers = []
         self.sample_id_field_names = []
         self.loaded = False
+        self.header_row_num = 1  # default header row number
+        self.replace_blanks_in_header = replace_blanks_in_header
 
     @property
     def headers(self):
@@ -79,11 +82,20 @@ class File:
                 return 1
         except IOError:
             return 0
-
+    """
     def get_headers(self):
         if not self.__headers:
             hdrs = self.get_row_by_number(1).split(self.file_delim)
             self.__headers = [hdr.strip().replace(' ', '_') for hdr in hdrs]
+        return self.__headers
+    """
+
+    def get_headers(self):
+        if not self.__headers:
+            hdrs = self.get_row_by_number_to_list(self.header_row_num)
+
+            if self.replace_blanks_in_header:
+                self.__headers = [hdr.strip().replace(' ', '_') for hdr in hdrs]
         return self.__headers
 
     def get_row_by_number(self, rownum):
@@ -93,6 +105,11 @@ class File:
             return line_list[rownum - 1]
         else:
             return ""
+
+    def get_row_by_number_to_list(self, rownum):
+        row = self.get_row_by_number(rownum)
+        row_list = list(reader([row], delimiter=self.file_delim, skipinitialspace=True))[0]
+        return row_list
 
     def rows_count(self, exclude_header=False):
         num = len(self.get_file_content())

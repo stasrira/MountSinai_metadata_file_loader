@@ -18,7 +18,7 @@ DB:
 
 Location:
     # path to the folder where all data files are located
-    data_folder: E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/datafiles
+    data_folder: D:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/datafiles
 
     #name of the folder where all logs files will be stored
     log_folder_name: logs

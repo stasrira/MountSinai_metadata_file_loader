@@ -97,7 +97,7 @@ class MetaFileExcel(MetaFileText):
                         if cell.ctype == 3:
                             cell_value_date = xlrd.xldate_as_datetime(cell_value, wb.datemode)
                             cell_value = cell_value_date.strftime("%Y-%m-%d")
-                        ln.append(cell_value)
+                        ln.append('"' + cell_value + '"')
 
                     self.lineList.append(','.join(ln))
 

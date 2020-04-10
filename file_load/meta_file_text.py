@@ -106,7 +106,8 @@ class MetaFileText(File):
         # out_dict = {'row':{},'error':None}
 
         hdrs = self.get_headers()  # self.get_row_by_number(1).split(self.file_delim) #get list of headers
-        lst_content = self.get_row_by_number(rownum).split(self.file_delim)  # get list of values contained by the row
+        # lst_content = self.get_row_by_number(rownum).split(self.file_delim)  # get list of values contained by the row
+        lst_content = self.get_row_by_number_to_list(rownum)
 
         row = Row(self, rownum, lst_content, hdrs)
         row.error = RowError(row)
