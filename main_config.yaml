@@ -1,8 +1,12 @@
 DB:
-    #dev conn string: Driver={SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;User=mt_internal_user;Password=se@lf0n1nt3rn@l
-    #prod conn string: Driver={ODBC Driver 17 for SQL Server};Server=10.160.20.65\SSQL_2016;Database=dw_motrpac;UID=mt_internal_user;PWD=se@lf0n1nt3rn@l
-    #    #DB connection string
-    mdb_conn_str: Driver={ODBC Driver 17 for SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;UID=mt_internal_user;PWD=se@lf0n1nt3rn@l # Driver={SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;User=mt_internal_user;Password=se@lf0n1nt3rn@l
+    #dev conn string (Windows): 
+    #Driver={SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;User=mt_internal_user;Password=se@lf0n1nt3rn@l
+    #prod conn string (Windows): 
+    #Driver={SQL Server};Server=10.160.20.65\SSQL_2016;Database=dw_motrpac;User=mt_internal_user;Password=se@lf0n1nt3rn@l
+    #prod conn string (Linux):
+    #DRIVER={ODBC Driver 17 for SQL Server};SERVER=10.160.20.65,51261;DATABASE=dw_motrpac;UID=mt_internal_user;PWD=se@lf0n1nt3rn@l
+    #DB connection string
+    mdb_conn_str: DRIVER={ODBC Driver 17 for SQL Server};SERVER=10.160.20.65,51261;DATABASE=dw_motrpac;UID=mt_internal_user;PWD=se@lf0n1nt3rn@l
     # name of the stored proc to be used to load samples to DB
     mdb_sql_proc_load_sample: exec usp_load_single_sample @study_id = {study_id}, @sample_id ='{sample_id}', @json ='{smpl_json}', @dict_json='{dict_json}', @dict_path='{dict_path}', @filepath='{filepath}', @dict_update={dict_update}, @samlpe_update={samlpe_update}
 
@@ -18,8 +22,12 @@ DB:
 
 Location:
     # path to the folder where all data files are located
-    data_folder: D:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/datafiles
-
+    data_folder: /mnt/researchsan02a/Metadata_Processing # /ext_data/stas/mountsinai_utils/metadata_file_loader/datafiles
+    
+    ignore_files:
+        - ".DS_Store"
+        - "study.cfg.yaml"
+        
     #name of the folder where all logs files will be stored
     log_folder_name: logs
     processed_folder_name: processed
@@ -29,8 +37,8 @@ Logging:
     #file log - log created for each processed file
 
     #defines log levels to be used for "main" and "file" logs. Usual values are INFO and DEBUG
-    main_log_level: DEBUG
-    file_log_level: DEBUG
+    main_log_level: INFO
+    file_log_level: INFO
 
     #name for the each type of log (moved to global_const.py)
     #main_log_name: main_log
@@ -40,9 +48,6 @@ Email:
     #default settings for sending emails
     smtp_server: smtp.mssm.edu
     smtp_server_port: 25
-    default_from_email: stas.rirak@mssm.edu
+    default_from_email: stasrirak.ms@gmail.com
     sent_to_emails: stasrirak.ms@gmail.com, stasrira@yahoo.com
     send_emails: True # expected values: True, False
-
-
-

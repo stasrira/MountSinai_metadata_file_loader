@@ -20,19 +20,10 @@ class ConfigData:
         return val
 
     def get_item_by_key(self, key_name):
-        return str(self.get_value(key_name))
+        # return str(self.get_value(key_name))
+        v = self.get_value(key_name)
+        if v is not None:
+            return str(self.get_value(key_name))
+        else:
+            return v
 
-
-'''    
-for section in cfg:
-    print(section)
-    print (cfg[section])
-    print(cfg[section]['mdb_conn_str'])
-
-#print(cfg['DB'])
-#print(cfg['Logging'])
-'''
-# ym = load_yaml_config(
-# 'E:\MounSinai\MoTrPac_API\ProgrammaticConnectivity\
-# MountSinai_metadata_file_loader\DataFiles\study01\study.cfg_1.yaml')
-# print (ym)
