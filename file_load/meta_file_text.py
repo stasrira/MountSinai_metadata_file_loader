@@ -321,7 +321,14 @@ class MetaFileText(File):
                             row.row_number, row.to_str()))
                     mdb = MetadataDB(self.cfg_file)
 
-                    mdb_resp = mdb.submit_row(row, self)
+                    mdb_resp = mdb.submit_row(
+                        row.sample_id,
+                        row.to_json(),
+                        self.get_file_dictionary_json(True),
+                        self.filepath,
+                        self.logger,
+                        self.error
+                    )
                     if not row.error.errors_exist():
                         _str = 'Row #{}. Sample Id "{}" was submitted to MDB. Status: {}; Description: {}'.format(
                             row.row_number, row.sample_id, mdb_resp[0][0]['status'], mdb_resp[0][0]['description'])

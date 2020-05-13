@@ -27,6 +27,10 @@ DEFAULT_STUDY_CONFIG_FILE_EXT = '.cfg.yaml'
 # database related constants
 # predefined paths in the main config file for database related parameters
 CFG_DB_CONN = 'DB/mdb_conn_str'  # name of the config parameter storing DB connection string
+CFG_DB_USER_NAME_PL_HOLDER = 'DB/db_user_name_pl_holder'
+CFG_DB_USER_PWD_PL_HOLDER = 'DB/db_user_pwd_pl_holder'
+CFG_DB_USER_NAME = 'DB/env_db_user_name'
+CFG_DB_USER_PWD = 'DB/env_db_user_pwd'
 CFG_DB_SQL_PROC = 'DB/mdb_sql_proc_load_sample'  # name of the config parameter storing DB name of the stored proc
 # predefined names for stored procedure parameters that being passed to procedure specified in "CFG_DB_SQL_PROC"
 CFG_FLD_TMPL_STUDY_ID = 'DB/fld_tmpl_study_id'

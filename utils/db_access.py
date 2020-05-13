@@ -2,6 +2,7 @@ import pyodbc
 import traceback
 from .configuration import ConfigData
 from utils import global_const as gc
+import os
 
 
 class MetadataDB:
@@ -21,18 +22,35 @@ class MetadataDB:
 
     def __init__(self, study_cfg):
         self.cfg = ConfigData(gc.MAIN_CONFIG_FILE)  # obj_cfg
-        self.s_conn = self.cfg.get_item_by_key(gc.CFG_DB_CONN).strip()
+        self.s_conn = self.prepare_conn_string()  # self.cfg.get_item_by_key(gc.CFG_DB_CONN).strip()
         self.study_cfg = study_cfg
+
+    def prepare_conn_string(self):
+        conn_str = self.cfg.get_item_by_key(gc.CFG_DB_CONN).strip()
+        user_name_pl_holder = self.cfg.get_item_by_key(gc.CFG_DB_USER_NAME_PL_HOLDER).strip()
+        user_pwd_pl_holder = self.cfg.get_item_by_key(gc.CFG_DB_USER_PWD_PL_HOLDER).strip()
+        user_name = os.environ.get(self.cfg.get_item_by_key(gc.CFG_DB_USER_NAME).strip())
+        user_pwd = os.environ.get(self.cfg.get_item_by_key(gc.CFG_DB_USER_PWD).strip())
+        conn_str = conn_str.replace(user_name_pl_holder, user_name)
+        conn_str = conn_str.replace(user_pwd_pl_holder, user_pwd)
+        return conn_str
 
     def open_connection(self):
         self.conn = pyodbc.connect(self.s_conn, autocommit=True)
 
-    def submit_row(self, row, file):  # sample_id, row_json, dict_json, filepath):
+    def submit_row(self,
+                   sample_id,  # sample id of the records being submitted
+                   row_json,  # row of data being submitted in JSON format
+                   dict_json,  # structure of the row being submitted (dictionary) in JSON format
+                   data_source_name,  # name of the source of data to be passed to DB (file path, etc.)
+                   logger_obj,  # logger obj to be used to pass log entries to
+                   error_obj  # error obj to be used to pass errors to
+                   ):
 
-        dict_json = file.get_file_dictionary_json(True)
-        filepath = str(file.filepath)
-        sample_id = row.sample_id
-        row_json = row.to_json()
+        # dict_json = file.get_file_dictionary_json(True)
+        # filepath = str(file.filepath)
+        # sample_id = row.sample_id
+        # row_json = row.to_json()
 
         if not self.conn:
             self.open_connection()
@@ -48,12 +66,13 @@ class MetadataDB:
         str_proc = str_proc.replace(self.cfg.get_item_by_key(gc.CFG_FLD_TMPL_ROW_JSON), row_json)  # '{smpl_json}'
         str_proc = str_proc.replace(self.cfg.get_item_by_key(gc.CFG_FLD_TMPL_DICT_JSON), dict_json)  # '{dict_json}'
         str_proc = str_proc.replace(self.cfg.get_item_by_key(gc.CFG_FLD_TMPL_DICT_PATH), dict_path)  # '{dict_path}'
-        str_proc = str_proc.replace(self.cfg.get_item_by_key(gc.CFG_FLD_TMPL_FILEPATH), filepath)  # '{filepath}'
+        str_proc = str_proc.replace(self.cfg.get_item_by_key(gc.CFG_FLD_TMPL_FILEPATH), str(data_source_name))  # '{filepath}'
         str_proc = str_proc.replace(self.cfg.get_item_by_key(gc.CFG_FLD_TMPL_DICT_UPD), dict_upd)  # '{dict_update}'
         str_proc = str_proc.replace(self.cfg.get_item_by_key(gc.CFG_FLD_TMPL_SAMPLE_UPD), sample_upd)
         # '{samlpe_update}'
 
-        file.logger.info('SQL Procedure call = {}'.format(str_proc))
+        # file.logger.info('SQL Procedure call = {}'.format(str_proc))
+        logger_obj.info('SQL Procedure call = {}'.format(str_proc))
         # print ('procedure (str_proc) = {}'.format(str_proc))
 
         # TODO: if procedure execution does not fail but return back status saying "ERROR:", record an error for the row
@@ -75,5 +94,5 @@ class MetadataDB:
             _str = 'Error "{}" occurred during submitting a row (sample_id = "{}") to database; ' \
                    'used SQL script "{}". Here is the traceback: \n{} '.format(
                     ex, sample_id, str_proc, traceback.format_exc())
-            row.error.add_error(_str)
-            file.logger.error(_str)
+            error_obj.add_error(_str)
+            logger_obj.error(_str)

@@ -6,10 +6,11 @@ import getpass
 from os import walk
 import time
 import traceback
-from utils.log_utils import setup_logger_common
-from utils import ConfigData
-from utils import global_const as gc
-from utils import send_email as email
+# from utils.log_utils import setup_logger_common
+from utils import setup_logger_common, ConfigData, common as cm, global_const as gc, send_email as email
+# from utils import ConfigData
+# from utils import global_const as gc
+# from utils import send_email as email
 
 # if executed by itself, do the following
 if __name__ == '__main__':
@@ -39,13 +40,38 @@ if __name__ == '__main__':
     mlog.info('Start processing files in "{}". '
               'Expected user login: "{}", Effective user: "{}"  '.format(df_path, os.getlogin(), getpass.getuser()))
 
-    # TODO: Verify that target directory (df_path) is accessable for the current user (under which the app is running)
-    # TODO: Identify the user under which the app is running if the df_path is not accessable
-
+    # Verify that target directory (df_path) is accessible for the current user (under which the app is running)
+    # Identify the user under which the app is running if the df_path is not accessible
     if not os.path.exists(df_path):
         mlog.error('Directory "{}" does not exist or not accessible for the current user. Aborting execution. '
                    'Expected user login: "{}", Effective user: "{}"  '.format(df_path, os.getlogin(), getpass.getuser()))
         exit(1)
+
+    # Validate expected Environment variables; if some variable are not present, abort execution
+    # setup environment variable sources:
+    # windows: https://www.youtube.com/watch?v=IolxqkL7cD8
+    # linux: https://www.youtube.com/watch?v=5iWhQWVXosU
+    mlog.info('Start validating presence of required environment variables.')
+    env_vars = []
+    env_var_confs = m_cfg.get_value('Validate/environment_variables')  # get dictionary of envir variables lists
+    if env_var_confs and isinstance(env_var_confs, dict):
+        for env_gr in env_var_confs:  # loop groups of envir variables
+            if env_gr in ['default']:
+                # proceed here for the "default" group of envir variables
+                env_vars = cm.extend_list_with_other_list(env_vars, env_var_confs[env_gr])
+        # validate existence of the environment variables
+        missing_env_vars = []
+        for evar in env_vars:
+            if not cm.validate_envir_variable(evar):
+                missing_env_vars.append(evar)
+
+        if missing_env_vars:
+            # check if any environment variables were recorded as missing
+            mlog.error('The following environment variables were not found: {}. Aborting execution. '
+                       'Make sure that the listed variables exist before next run.'.format(missing_env_vars))
+            exit(1)
+        else:
+            mlog.info('All required environment variables were found.')
 
     try:
 
