@@ -20,7 +20,7 @@ class FieldIdMethod:
 def load_configuration(fl_class, loc_cfg_path):
     # load global configuration
 
-    m_cfg = ConfigData(gc.MAIN_CONFIG_FILE)
+    # m_cfg = ConfigData(gc.MAIN_CONFIG_FILE)
     m_logger_name = gc.MAIN_LOG_NAME  # m_cfg.get_value('Logging/main_log_name')
     m_logger = logging.getLogger(m_logger_name)
 

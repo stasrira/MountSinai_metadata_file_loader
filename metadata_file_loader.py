@@ -6,11 +6,8 @@ import getpass
 from os import walk
 import time
 import traceback
-# from utils.log_utils import setup_logger_common
-from utils import setup_logger_common, ConfigData, common as cm, global_const as gc, send_email as email
-# from utils import ConfigData
-# from utils import global_const as gc
-# from utils import send_email as email
+from utils import ConfigData, common as cm, global_const as gc, send_email as email
+
 
 # if executed by itself, do the following
 if __name__ == '__main__':
@@ -18,25 +15,21 @@ if __name__ == '__main__':
     # load main config file and get required values
     m_cfg = ConfigData(gc.MAIN_CONFIG_FILE)
 
-    # print ('m_cfg = {}'.format(m_cfg.cfg))
-    # assign values
-    common_logger_name = gc.MAIN_LOG_NAME # m_cfg.get_value('Logging/main_log_name')
-    logging_level = m_cfg.get_value('Logging/main_log_level')
+    # setup application level logger
+    cur_dir = Path(os.path.dirname(os.path.abspath(__file__)))
+    mlog = cm.setup_logger(m_cfg, cur_dir)
+
+    # validate expected environment variables; if some variable are not present, abort execution
+    cm.validate_available_envir_variables(mlog, m_cfg, ['default'])
+
+    # get data processing related config values
     datafiles_path = m_cfg.get_value('Location/data_folder')
     ignore_files = m_cfg.get_value('Location/ignore_files')
-    log_folder_name = gc.LOG_FOLDER_NAME
     processed_folder_name = gc.PROCESSED_FOLDER_NAME
-
     # datafiles_path = 'E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/DataFiles'
     df_path = Path(datafiles_path)
 
-    # get current location of the script and create Log folder
-    wrkdir = Path(os.path.dirname(os.path.abspath(__file__))) / log_folder_name  # 'logs'
-    lg_filename = time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log'
-
-    lg = setup_logger_common(common_logger_name, logging_level, wrkdir, lg_filename)  # logging_level
-    mlog = lg['logger']
-
+    # perform initial validations
     mlog.info('Start processing files in "{}". '
               'Expected user login: "{}", Effective user: "{}"  '.format(df_path, os.getlogin(), getpass.getuser()))
 
@@ -47,32 +40,7 @@ if __name__ == '__main__':
                    'Expected user login: "{}", Effective user: "{}"  '.format(df_path, os.getlogin(), getpass.getuser()))
         exit(1)
 
-    # Validate expected Environment variables; if some variable are not present, abort execution
-    # setup environment variable sources:
-    # windows: https://www.youtube.com/watch?v=IolxqkL7cD8
-    # linux: https://www.youtube.com/watch?v=5iWhQWVXosU
-    mlog.info('Start validating presence of required environment variables.')
-    env_vars = []
-    env_var_confs = m_cfg.get_value('Validate/environment_variables')  # get dictionary of envir variables lists
-    if env_var_confs and isinstance(env_var_confs, dict):
-        for env_gr in env_var_confs:  # loop groups of envir variables
-            if env_gr in ['default']:
-                # proceed here for the "default" group of envir variables
-                env_vars = cm.extend_list_with_other_list(env_vars, env_var_confs[env_gr])
-        # validate existence of the environment variables
-        missing_env_vars = []
-        for evar in env_vars:
-            if not cm.validate_envir_variable(evar):
-                missing_env_vars.append(evar)
-
-        if missing_env_vars:
-            # check if any environment variables were recorded as missing
-            mlog.error('The following environment variables were not found: {}. Aborting execution. '
-                       'Make sure that the listed variables exist before next run.'.format(missing_env_vars))
-            exit(1)
-        else:
-            mlog.info('All required environment variables were found.')
-
+    # start processing metadata files at the appropriate locations
     try:
 
         (_, dirstudies, _) = next(walk(df_path))

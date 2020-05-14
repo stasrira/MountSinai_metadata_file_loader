@@ -62,3 +62,6 @@ Validate:
             - APP_DB_USER_PWD
         redcap: # list of variables required for RedCap run
             - REDCAP_HCW_TOKEN
+
+API_process_configs:
+    - redcap_hcw_metadata_config.yaml

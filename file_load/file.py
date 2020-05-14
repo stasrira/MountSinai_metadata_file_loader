@@ -36,6 +36,7 @@ class File:
         self.loaded = False
         self.header_row_num = 1  # default header row number
         self.replace_blanks_in_header = replace_blanks_in_header
+        self.log_handler = None
 
     @property
     def headers(self):
@@ -96,6 +97,8 @@ class File:
 
             if self.replace_blanks_in_header:
                 self.__headers = [hdr.strip().replace(' ', '_') for hdr in hdrs]
+            else:
+                self.__headers = hdrs
         return self.__headers
 
     def get_row_by_number(self, rownum):

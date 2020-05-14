@@ -1,13 +1,28 @@
 import yaml
+from utils import common as cm
 
 
 class ConfigData:
 
+    """
     def __init__(self, cfg_path):
         self.loaded = False
         with open(cfg_path, 'r') as ymlfile:
             self.cfg = yaml.load(ymlfile)
         self.loaded = True
+    """
+
+    def __init__(self, cfg_path):
+        self.loaded = False
+
+        if cm.file_exists(cfg_path):
+            with open(cfg_path, 'r') as ymlfile:
+                self.cfg = yaml.load(ymlfile)
+            # self.prj_wrkdir = os.path.dirname(os.path.abspath(cfg_path))
+            self.loaded = True
+        else:
+            self.cfg = None
+            # self.prj_wrkdir = None
 
     def get_value(self, yaml_path, delim='/'):
         path_elems = yaml_path.split(delim)

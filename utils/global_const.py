@@ -1,6 +1,7 @@
 # ========== config file names
 # main config file name
-MAIN_CONFIG_FILE = 'main_config.yaml'
+CONFIGS_DIR = 'configs/'
+MAIN_CONFIG_FILE = CONFIGS_DIR + 'main_config.yaml'
 # study level default name for the config file
 DEFAULT_STUDY_CONFIG_FILE = 'study.cfg.yaml'
 
@@ -50,3 +51,6 @@ CFG_DB_ALLOW_SAMPLE_UPDATE = 'mdb_allow_sample_update'  # name of config param s
 
 # Excel processing related
 STUDY_EXCEL_WK_SHEET_NAME = 'wk_sheet_name'  # name of the worksheet name to be used for loading data from
+
+# API processing related
+YAML_EVAL_FLAG = 'eval!'

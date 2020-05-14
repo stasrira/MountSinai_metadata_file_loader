@@ -1,0 +1,49 @@
+API:
+  name: RedCap-HRHCW
+  url: "https://redcap.mountsinai.org/redcap/api/1234"
+  post_fields:
+    {
+    "token": "eval!os.environ.get('REDCAP_HCW_TOKEN')",
+    "content": "report",
+    "format": "json",
+    "report_id": "24219",
+    "rawOrLabel": "label",
+    "rawOrLabelHeaders": "raw",
+    "exportCheckboxLabel": "true",
+    "returnFormat": "json"
+    }
+
+DATA:
+  #this a default delimiter character to separate config values provided as a list
+  config_value_list_separator: ","
+
+  #JSON template for dictionary
+  dict_tmpl: {"field":[{"description":"","encoding":"null","label":"","type":"varchar","name":""}]}
+  #name of the dictionary element (from dict_tmpl) holding array of fields of this dictionary
+  dict_tmpl_fields_node: field
+  #list of the fields in the dict_field_tmpl that has to be updated with the actual values - name of the field header
+  dict_field_tmpl_update_fields: label,name
+  #name of the field in the dict_field_tmpl to sort dictionary content by default
+  dict_field_sort_by: name
+
+  #comma delimited list identifying names or column numbers based on the value of "mandatory_fields_method"
+  mandatory_fields: biospecimen_id,subject_id
+  #expected values: "name" or "number"
+  mandatory_fields_method: name
+
+  #comma delimited list identifying names or column numbers based on the value of "sample_id_method"
+  sample_id_fields: biospecimen_id
+  #expected values: "name" or "number"
+  sample_id_method: name
+  #python expression based on sample_id_fields config value; it will be used to form sample id value
+  sample_id_expression: "{biospecimen_id}"
+  #identifies if validation is required - expected values
+  sample_id_eval_required: False
+
+DB:
+  #metadata DB study id
+  mdb_study_id: 17
+  # this will be sent to MDB; 0: not allow, 1: allow. It reflects if dictionary structure can be updated if the new version of dictionary differs from the existing one (i.e. a new field was added)
+  mdb_allow_dict_update: 1
+  # this will be sent to MDB; 0: not allow, 1: allow. It reflects if sample's json string stored in DB can be updated with the new version if it differs from the existing one (i.e. a case when some corrections were provided to early sent file)
+  mdb_allow_sample_update: 1
