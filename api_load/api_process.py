@@ -38,16 +38,23 @@ class ApiProcess():
             self.loaded = True
 
     def process_api_call(self):
+        # perform the actual API call, collect output in api_output and status into errors_reported (T/F variable)
         api_output, errors_reported = cm.perform_api_call(self.api_url, self.post_fields, self.logger, self.error)
+
+        # check if errors were reported
         if errors_reported:
             # stop processing of API is error is reported
             self.logger.warning('Aborting processing current API call, since errors were reported (see earlier entries)')
             return
-        if not api_output and len(api_output.strip()) != 0:
-            # proceed with processing an API dataset
+        #validate the returned ds
+        if api_output and len(api_output.strip()) != 0:
+            # proceed with processing an API ds
             api_ds = ApiDataset(api_output, self.api_cfg, self.logger, self.error)
         else:
-            # stop processing API if returned dataset is empty
-            self.logger.warning('API call returned an empty dataset, aborting processing the current API call')
+            # stop processing API if returned ds is empty
+            self.logger.warning('API call returned an empty ds, aborting processing the current API call')
             return
+
+
+
         pass
