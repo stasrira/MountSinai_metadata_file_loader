@@ -140,8 +140,14 @@ def perform_api_call(api_url, post_data, mlog_obj, error_obj):
     return val_out, errors_reported
 
 
-def eval_cfg_value(cfg_val, mlog_obj, error_obj):
+def eval_cfg_value(cfg_val, mlog_obj, error_obj, self_obj_ref = None):
     eval_flag = gc.YAML_EVAL_FLAG  # 'eval!'
+
+    # if self object is referenced in some of the config values, it will provide are reference to it
+    if self_obj_ref:
+        self = self_obj_ref
+    else:
+        self = None
 
     # check if some configuration instruction/key was retrieved for the given "key"
     if cfg_val:
@@ -150,10 +156,8 @@ def eval_cfg_value(cfg_val, mlog_obj, error_obj):
             try:
                 out_val = eval(cfg_val)
             except Exception as ex:
-                _str = 'Error "{}" occurred during preparing submission form "{}" for sub-aliquot "{}" ' \
-                       'while attempting to interpret configuration key "{}" provided for the form\'s key ' \
-                       '"{}". \n{} ' \
-                    .format(ex, self.form_name, self.sub_aliquot, cfg_val, key, traceback.format_exc())
+                _str = 'Error "{}" occurred while attempting to evaluate the following value "{}" \n{} ' \
+                    .format(ex, cfg_val, traceback.format_exc())
                 mlog_obj.error(_str)
                 error_obj.add_error(_str)
                 out_val = ''

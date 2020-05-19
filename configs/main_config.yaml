@@ -64,4 +64,4 @@ Validate:
             - REDCAP_HCW_TOKEN
 
 API_process_configs:
-    - redcap_hcw_metadata_config.yaml
+    - api_redcap_hcw_metadata_config.yaml

@@ -14,9 +14,101 @@ API:
     }
 
 DATA:
-  validation: # conditions that should return True
-    - "eval!{registration_complete} == 'Complete'"
-    - "eval!{visit_complete} == 'Complete'"
+
+  # each condition will be used to create a dynamic column in the data frame object and should return boolean
+  # each condition should return True to pass validation
+  # 'eval!' signals to code that condition should be evaluated with eval function
+  # function self.get_df_col_obj will return value of the column from a data frame based on the column's name provided
+  validation_rules:
+    -
+      rule: "eval!self.get_df_col_obj('visit_complete') == 'Unverified'"
+      report_failure:
+      message:
+    -
+      rule: "eval!self.get_df_col_obj('registration_complete') == 'Complete'"
+      report_failure:
+      message:
+    - # this rule reconstructs expected sample id value and compares it to the actually submitted one
+      rule: >
+        eval!self.get_df_col_obj('sample_id') ==
+        'M' + self.get_df_col_obj('subject_id') +
+        'V' + self.get_df_col_obj('redcap_event_name').str[-2:].str.replace(' ', '0') +
+        self.get_df_col_obj('sample_type').apply(
+         lambda x:
+         'SST' if x == 'sst_id' else
+         'PAX' if x == 'paxgene_id' else
+         'CPT' if x == 'cpt_id_1' else
+         'TEM' if x == 'tempus_id' else
+         'SLV' if x == 'saliva_id' else ''
+        )
+      report_failure: True
+      report_columns: ["sample_id", "sample_type", "subject_id", "redcap_event_name"]
+      message: Provided Sample ID do not match the expected Sample ID value for the row.
+
+  transform:
+    unpivot: # used in cases when one received record should be transformed in to several sample entries (i.e. HCW)
+      apply: True
+      unpivot_vars: ["sst_id","paxgene_id", "cpt_id_1", "tempus_id", "saliva_id"] # columns that will be combined in one
+      unpivot_var_name: sample_type # new column created instead of the unpivoted ones, storing original column's names
+      unpivot_value_name: sample_id # new column created instead of the unpivoted ones, storing original column's values
+      unpivot_preserved_columns:
+        - "subject_id"
+        - "redcap_event_name"
+        - "collection_age"
+        - "sex"
+        - "race"
+        - "ethnicity"
+        - "current_viral"
+        - "prior_infection"
+        - "infection_details"
+        - "antibiotic_use"
+        - "antiobiotic_details"
+        - "risk_factors"
+        - "other_risk"
+        - "clinical_start_date"
+        - "role"
+        - "role_other"
+        - "height"
+        - "weight"
+        - "bmi"
+        - "temp"
+        - "bp"
+        - "pulse"
+        - "respiration"
+        - "location_change"
+        - "ppe_use"
+        - "ppe_details"
+
+  output_dataset:
+    sample_id: "sample_id"
+    columns_to_db:
+    - "sample_id"
+    - "subject_id"
+    - "redcap_event_name"
+    - "collection_age"
+    - "sex"
+    - "race"
+    - "ethnicity"
+    - "current_viral"
+    - "prior_infection"
+    - "infection_details"
+    - "antibiotic_use"
+    - "antiobiotic_details"
+    - "risk_factors"
+    - "other_risk"
+    - "clinical_start_date"
+    - "role"
+    - "role_other"
+    - "height"
+    - "weight"
+    - "bmi"
+    - "temp"
+    - "bp"
+    - "pulse"
+    - "respiration"
+    - "location_change"
+    - "ppe_use"
+    - "ppe_details"
 
   record_split:
     -
