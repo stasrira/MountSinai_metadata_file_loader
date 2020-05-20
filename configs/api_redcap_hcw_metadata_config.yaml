@@ -1,5 +1,5 @@
 API:
-  name: RedCap-HRHCW
+  name: API load for RedCap-HRHCW study
   url: "https://redcap.mountsinai.org/redcap/api/"
   post_fields:
     {
@@ -15,10 +15,14 @@ API:
 
 DATA:
 
-  # each condition will be used to create a dynamic column in the data frame object and should return boolean
-  # each condition should return True to pass validation
-  # 'eval!' signals to code that condition should be evaluated with eval function
-  # function self.get_df_col_obj will return value of the column from a data frame based on the column's name provided
+  # - each condition will be used to create a dynamic column in the data frame object and should return boolean
+  # - each condition should return True to pass validation
+  # - all records with status False will be filtered out from the dataset
+  # - order of the validation rules matters, since the later rules will deal only with records survived previous rules
+  #   first rules should be more generic to fitler more records as possible
+  # - rules without report_failure = True won't be reported to the user and assumed a normal case, i.e not finalized row, etc.
+  # - 'eval!' signals to code that condition should be evaluated with eval function
+  # - function self.get_df_col_obj will return value of the column from a data frame based on the column's name provided
   validation_rules:
     -
       rule: "eval!self.get_df_col_obj('visit_complete') == 'Unverified'"
@@ -38,7 +42,7 @@ DATA:
          'SST' if x == 'sst_id' else
          'PAX' if x == 'paxgene_id' else
          'CPT' if x == 'cpt_id_1' else
-         'TEM' if x == 'tempus_id' else
+         'TMP' if x == 'tempus_id' else
          'SLV' if x == 'saliva_id' else ''
         )
       report_failure: True
@@ -110,175 +114,6 @@ DATA:
     - "ppe_use"
     - "ppe_details"
 
-  record_split:
-    -
-      sample_id: "sst_id"
-      validation: # conditions that should return True
-      # TODO: add regex to verify structure of the sample id received in the records
-        - "eval!1 = 1"
-      fields:
-        - {field: "subject_id", alias:}
-        - {field: "redcap_event_name", alias:}
-        - {field: "collection_age", alias:}
-        - {field: "sex", alias:}
-        - {field: "race", alias:}
-        - {field: "ethnicity", alias:}
-        - {field: "current_viral", alias:}
-        - {field: "prior_infection", alias:}
-        - {field: "infection_details", alias:}
-        - {field: "antibiotic_use", alias:}
-        - {field: "antiobiotic_details", alias:}
-        - {field: "risk_factors", alias:}
-        - {field: "other_risk", alias:}
-        - {field: "clinical_start_date", alias:}
-        - {field: "role", alias:}
-        - {field: "role_other", alias:}
-        - {field: "height", alias:}
-        - {field: "weight", alias:}
-        - {field: "bmi", alias:}
-        - {field: "temp", alias:}
-        - {field: "bp", alias:}
-        - {field: "pulse", alias:}
-        - {field: "respiration", alias:}
-        - {field: "location_change", alias:}
-        - {field: "ppe_use", alias:}
-        - {field: "ppe_details", alias:}
-        - {field: "sst_no", alias: "tubes_collected"}
-        - {field: "sst_id", alias: "collection_tube_id"}
-    -
-      sample_id: "paxgene_id"
-      validation: # conditions that should return True
-        - "eval!1 = 1"
-      fields:
-        - {field: "subject_id", alias:}
-        - {field: "redcap_event_name", alias:}
-        - {field: "collection_age", alias:}
-        - {field: "sex", alias:}
-        - {field: "race", alias:}
-        - {field: "ethnicity", alias:}
-        - {field: "current_viral", alias:}
-        - {field: "prior_infection", alias:}
-        - {field: "infection_details", alias:}
-        - {field: "antibiotic_use", alias:}
-        - {field: "antiobiotic_details", alias:}
-        - {field: "risk_factors", alias:}
-        - {field: "other_risk", alias:}
-        - {field: "clinical_start_date", alias:}
-        - {field: "role", alias:}
-        - {field: "role_other", alias:}
-        - {field: "height", alias:}
-        - {field: "weight", alias:}
-        - {field: "bmi", alias:}
-        - {field: "temp", alias:}
-        - {field: "bp", alias:}
-        - {field: "pulse", alias:}
-        - {field: "respiration", alias:}
-        - {field: "location_change", alias:}
-        - {field: "ppe_use", alias:}
-        - {field: "ppe_details", alias:}
-        - {field: "paxgene_no", alias: "tubes_collected"}
-        - {field: "paxgene_id", alias: "collection_tube_id"}
-    -
-      sample_id: "cpt_id_1"
-      validation: # conditions that should return True
-        - "eval!1 = 1"
-        - "eval!{cpt_id_1} = {cpt_id_2}"
-      fields:
-        - {field: "subject_id", alias:}
-        - {field: "redcap_event_name", alias:}
-        - {field: "collection_age", alias:}
-        - {field: "sex", alias:}
-        - {field: "race", alias:}
-        - {field: "ethnicity", alias:}
-        - {field: "current_viral", alias:}
-        - {field: "prior_infection", alias:}
-        - {field: "infection_details", alias:}
-        - {field: "antibiotic_use", alias:}
-        - {field: "antiobiotic_details", alias:}
-        - {field: "risk_factors", alias:}
-        - {field: "other_risk", alias:}
-        - {field: "clinical_start_date", alias:}
-        - {field: "role", alias:}
-        - {field: "role_other", alias:}
-        - {field: "height", alias:}
-        - {field: "weight", alias:}
-        - {field: "bmi", alias:}
-        - {field: "temp", alias:}
-        - {field: "bp", alias:}
-        - {field: "pulse", alias:}
-        - {field: "respiration", alias:}
-        - {field: "location_change", alias:}
-        - {field: "ppe_use", alias:}
-        - {field: "ppe_details", alias:}
-        - {field: "cpt_no", alias: "tubes_collected"}
-        - {field: "cpt_id_1", alias: "collection_tube_id"}
-    -
-      sample_id: "tempus_id"
-      validation: # conditions that should return True
-        - "eval!1 = 1"
-      fields:
-        - {field: "subject_id", alias:}
-        - {field: "redcap_event_name", alias:}
-        - {field: "collection_age", alias:}
-        - {field: "sex", alias:}
-        - {field: "race", alias:}
-        - {field: "ethnicity", alias:}
-        - {field: "current_viral", alias:}
-        - {field: "prior_infection", alias:}
-        - {field: "infection_details", alias:}
-        - {field: "antibiotic_use", alias:}
-        - {field: "antiobiotic_details", alias:}
-        - {field: "risk_factors", alias:}
-        - {field: "other_risk", alias:}
-        - {field: "clinical_start_date", alias:}
-        - {field: "role", alias:}
-        - {field: "role_other", alias:}
-        - {field: "height", alias:}
-        - {field: "weight", alias:}
-        - {field: "bmi", alias:}
-        - {field: "temp", alias:}
-        - {field: "bp", alias:}
-        - {field: "pulse", alias:}
-        - {field: "respiration", alias:}
-        - {field: "location_change", alias:}
-        - {field: "ppe_use", alias:}
-        - {field: "ppe_details", alias:}
-        - {field: "tempus_no", alias: "tubes_collected"}
-        - {field: "tempus_id", alias: "collection_tube_id"}
-    -
-      sample_id: "saliva_id"
-      validation: # conditions that should return True
-        - "eval!1 = 1"
-      fields:
-        - {field: "subject_id", alias:}
-        - {field: "redcap_event_name", alias:}
-        - {field: "collection_age", alias:}
-        - {field: "sex", alias:}
-        - {field: "race", alias:}
-        - {field: "ethnicity", alias:}
-        - {field: "current_viral", alias:}
-        - {field: "prior_infection", alias:}
-        - {field: "infection_details", alias:}
-        - {field: "antibiotic_use", alias:}
-        - {field: "antiobiotic_details", alias:}
-        - {field: "risk_factors", alias:}
-        - {field: "other_risk", alias:}
-        - {field: "clinical_start_date", alias:}
-        - {field: "role", alias:}
-        - {field: "role_other", alias:}
-        - {field: "height", alias:}
-        - {field: "weight", alias:}
-        - {field: "bmi", alias:}
-        - {field: "temp", alias:}
-        - {field: "bp", alias:}
-        - {field: "pulse", alias:}
-        - {field: "respiration", alias:}
-        - {field: "location_change", alias:}
-        - {field: "ppe_use", alias:}
-        - {field: "ppe_details", alias:}
-        - {field: "", alias: "tubes_collected"}
-        - {field: "saliva_id", alias: "collection_tube_id"}
-
   record_dictionary:
     #this a default delimiter character to separate config values provided as a list
     config_value_list_separator: ","
@@ -294,7 +129,7 @@ DATA:
 
 DB:
   #metadata DB study id
-  mdb_study_id: 17
+  mdb_study_id: 27
   # this will be sent to MDB; 0: not allow, 1: allow. It reflects if dictionary structure can be updated if the new version of dictionary differs from the existing one (i.e. a new field was added)
   mdb_allow_dict_update: 1
   # this will be sent to MDB; 0: not allow, 1: allow. It reflects if sample's json string stored in DB can be updated with the new version if it differs from the existing one (i.e. a case when some corrections were provided to early sent file)

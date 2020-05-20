@@ -17,13 +17,16 @@ class MetadataDB:
     # CFG_DB_ALLOW_SAMPLE_UPDATE = 'DB/mdb_allow_sample_update' # name of the config parameter storing values
     # for "allow sample updates"
 
-    s_conn = ''
-    conn = None
-
-    def __init__(self, study_cfg):
+    def __init__(self, study_cfg = None, cfg_content_dict = None):
         self.cfg = ConfigData(gc.MAIN_CONFIG_FILE)  # obj_cfg
         self.s_conn = self.prepare_conn_string()  # self.cfg.get_item_by_key(gc.CFG_DB_CONN).strip()
-        self.study_cfg = study_cfg
+        if study_cfg:
+            self.study_cfg = study_cfg
+        elif cfg_content_dict:
+            self.study_cfg = ConfigData(None, cfg_content_dict)
+        else:
+            self.study_cfg = None
+        self.conn = None
 
     def prepare_conn_string(self):
         conn_str = self.cfg.get_item_by_key(gc.CFG_DB_CONN).strip()
@@ -87,6 +90,7 @@ class MetadataDB:
             for row in rows:
                 results.append(dict(zip(columns, row)))
             rs_out.append(results)
+            # TODO: return status and rs_out as 2 separate values, so the status can be interpreted by receiver
             return rs_out
 
         except Exception as ex:

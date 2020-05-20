@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 from collections import OrderedDict
 from file_load.file_error import RowError
-from utils import MetadataDB  # database connectivity related class
+from utils import MetadataDB, common2 as cm2  # database connectivity related class
 from utils.log_utils import deactivate_logger_common
 from utils import global_const as gc
 from .file import File
@@ -12,12 +12,14 @@ from .row import Row
 
 # metadata text file class
 class MetaFileText(File):
-    cfg_file = None
-    file_dict = None  # OrderedDict()
-    rows = None  # OrderedDict()
-
     def __init__(self, filepath, cfg_path='', file_type=1, file_delim=','):
         File.__init__(self, filepath, file_type, file_delim)
+
+        # TODO: implement logic to read values from self.db_response_alerts and report those in the email notification
+        self.db_response_alerts = None  # keeps list of notifications form DB submissions that returned not OK status
+        cfg_file = None
+        file_dict = None  # OrderedDict()
+        rows = None  # OrderedDict()
 
         self.logger = self.setup_logger(self.wrkdir, self.filename)
         self.logger.info('Start working with file {}'.format(filepath))
@@ -37,20 +39,33 @@ class MetaFileText(File):
             self.error.add_error(_str)
             self.logger.error(_str)
 
+    def get_file_dictionary(self, sort=None, sort_by_field=None):
+        if not sort:
+            sort = False
+        if not sort_by_field:
+            sort_by_field = ''
+
+        # get configuration object reference
+        cfg = self.get_config_info()
+        # get file's headers
+        hdrs = self.get_headers()
+
+        return cm2.get_dataset_dictionary (hdrs, cfg.get_all_data(), sort, sort_by_field)
+
+
     # read headers of the file and create a dictionary for it
     # dictionary for creating files should preserve columns order
     # dictionary to be submitted to DB has to be sorted alphabetically
-    def get_file_dictionary(self, sort=False, sort_by_field=''):
+    def get_file_dictionary_orig_todelete(self, sort=False, sort_by_field=''):
 
         # dict1 = OrderedDict()
 
         cfg = self.get_config_info()  # get reference to config info class
-        fields = cfg.get_item_by_key(
-            'dict_tmpl_fields_node')  # get name of the node in dictionary holding array of fields
+        fields = cfg.get_item_by_key('dict_tmpl_fields_node')  # name of the node in dictionary holding array of fields
 
         if not self.file_dict:
             dict1 = eval(cfg.get_item_by_key('dict_tmpl'))  # {fields:[]}
-            fld_dict_tmp = dict1[fields][0]  # eval(cfg.get_item_by_key('dict_field_tmpl'))
+            fld_dict_tmp = dict1[fields][0]
             dict1[fields].clear()
 
             if dict1:
@@ -321,21 +336,29 @@ class MetaFileText(File):
                             row.row_number, row.to_str()))
                     mdb = MetadataDB(self.cfg_file)
 
+                    # TODO: receive status returned by DB in a separate variable
                     mdb_resp = mdb.submit_row(
                         row.sample_id,
                         row.to_json(),
                         self.get_file_dictionary_json(True),
                         self.filepath,
                         self.logger,
-                        self.error
+                        self.row.error
                     )
                     if not row.error.errors_exist():
                         _str = 'Row #{}. Sample Id "{}" was submitted to MDB. Status: {}; Description: {}'.format(
                             row.row_number, row.sample_id, mdb_resp[0][0]['status'], mdb_resp[0][0]['description'])
                         self.logger.info(_str)
-                        # for r in mdb_resp:
-                        # print(r[0]['status'])
-                        # print(r[0]['description'])
+
+                        if mdb_resp[0][0]['status'] != 'OK':
+                            if not self.db_response_alerts:
+                                self.db_response_alerts = []
+                            self.db_response_alerts.append(
+                                {'sample_id': row.sample_id,
+                                 'status': mdb_resp[0][0]['status'],
+                                 'description': mdb_resp[0][0]['description']}
+                            )
+
                     else:
                         _str = 'Error occured during submitting sample Id "{}" to MDB. Error details: {}'.format(
                             row.sample_id, row.error.get_errors_to_str())
@@ -371,5 +394,3 @@ class MetaFileText(File):
         # self.logger.removeHandler(self.log_handler)
         deactivate_logger_common(self.logger, self.log_handler)
 
-# TODO: for Text and Excel files - handling commas a part of the field values provided.
-#  		Idea is to accomodate double quotes as text identifier; however double quotes should not be considered a value

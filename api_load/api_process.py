@@ -7,6 +7,7 @@ class ApiProcess():
         self.loaded = False
         # set logger object
         self.logger = log_obj
+        self.dataset = None
 
         # set error object
         self.error = ApiError(self)
@@ -44,12 +45,20 @@ class ApiProcess():
         # check if errors were reported
         if errors_reported:
             # stop processing of API is error is reported
-            self.logger.warning('Aborting processing current API call, since errors were reported (see earlier entries)')
+            self.logger.warning('Aborting processing the current API call, since errors were reported (see earlier entries)')
             return
         #validate the returned ds
         if api_output and len(api_output.strip()) != 0:
             # proceed with processing an API ds
-            api_ds = ApiDataset(api_output, self.api_cfg, self.logger, self.error)
+            self.dataset = ApiDataset(api_output, self.api_cfg, self.logger, self.error, self.api_name)
+            if self.dataset.loaded:
+                self.dataset.submit_rows_to_db()
+
+
+            else:
+                self.logger.warning('Application failed to process the API response. See previous log entries '
+                                    'for more details. Aborting processing the current API call.')
+                return
         else:
             # stop processing API if returned ds is empty
             self.logger.warning('API call returned an empty ds, aborting processing the current API call')

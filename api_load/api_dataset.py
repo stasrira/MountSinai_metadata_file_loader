@@ -1,17 +1,21 @@
 import traceback
 import json
 import pandas as pd
-from utils import common as cm
+from utils import common as cm, common2 as cm2, MetadataDB
 
 class ApiDataset():
-    def __init__(self, api_dataset_str, cfg_obj, log_obj, err_obj):
+    def __init__(self, api_dataset_str, cfg_obj, log_obj, err_obj, api_process_name):
         self.cfg = cfg_obj
         self.logger = log_obj
         self.error = err_obj
+        self.api_process_name = api_process_name
+
+        self.loaded = False
 
         self.api_dataset_str = api_dataset_str
         self.validation_rules = None
-        self.validation_alerts = None  # TODO: add functionality to report alerts to users trhough email
+        self.validation_alerts = None  # TODO: add functionality to report alerts to users through email
+        self.db_response_alerts = None  # TODO: add functionality to report alerts to users through email
 
         try:
             # self.json_obj = json.loads(api_dataset_str)
@@ -42,66 +46,152 @@ class ApiDataset():
         self.prepare_dataset_validation_columns()
         print(self.ds)
 
-        # TODO: loop through all validation rules and report records that fail those rules
         # select only records that satisfy all validation rules
         for valid_rule in self.validation_rules:
-            ds_failed = self.ds[self.ds[valid_rule['name']] == False]
-            # check if failed validation rule has to be reported
-            if 'report_failure' in valid_rule.keys() and valid_rule['report_failure']:
-                _str = 'Dataset validation failed for {} records. Error message: "{}". ' \
-                       'Data extract for affected rows:\n{}'\
-                    .format(ds_failed.shape[0], valid_rule['message'],
-                            ds_failed[valid_rule['report_columns']]
-                            if 'report_columns' in valid_rule.keys()
-                            else 'No columns to display were provided for the current rule...')
+            if len(self.ds) > 0:
+                ds_failed = self.ds[self.ds[valid_rule['name']] == False]
+                # check if failed validation rule has to be reported
+                if 'report_failure' in valid_rule.keys() and valid_rule['report_failure']:
+                    _str = 'Dataset validation failed for {} record(s). Error message: "{}". ' \
+                           'Data extract for affected rows:\n{}'\
+                        .format(ds_failed.shape[0], valid_rule['message'],
+                                ds_failed[valid_rule['report_columns']]
+                                if 'report_columns' in valid_rule.keys()
+                                else 'No columns to display were provided for the current rule...')
 
-                self.logger.warning(_str)
-                # add validation alert to the validation alert list
-                if not self.validation_alerts:
-                    self.validation_alerts = []
-                self.validation_alerts.append(_str)
-            # print(ds_failed)
+                    self.logger.warning(_str)
+                    # add validation alert to the validation alert list
+                    if not self.validation_alerts:
+                        self.validation_alerts = []
+                    self.validation_alerts.append(_str)
 
-        # select only records that satisfy all validation rules
-        for valid_rule in self.validation_rules:
-            # commented for TESTING ONLY, un-comment!!!
-            # self.ds = self.ds[self.ds[valid_rule['name']] == True]
-            # print(self.ds)
-            pass
+                # filter out records that do not satisfy the current validation rule
+                #### self.ds = self.ds[self.ds[valid_rule['name']] == True]  # Might be commented for testin only!!!!
+                # print(self.ds)
+                # print(ds_failed)
+            else:
+                break
+
 
         print (self.ds)
 
+        # check that final dataset has some rows
+        if len(self.ds) > 0:
+            self.loaded = True
+        else:
+            self.logger.warning('The dataset contains no valid records to be processed.')
+
+    def submit_rows_to_db(self):
         # select only columns that has to be reported to MDB
         columns_to_db = self.cfg.get_value('DATA/output_dataset/columns_to_db')
         if columns_to_db:
             # if columns_to_db are provided, filter dataset based on the list of given columns
-            self.ds = self.ds[columns_to_db]
+            ds_db = self.ds[columns_to_db]
+        else:
+            ds_db = self.ds
+
         sample_id_to_db = self.cfg.get_value('DATA/output_dataset/sample_id')
-        # TODO: verify that sample id was provided
+
+        # verify that sample id was provided and exists in the dataset
+        if sample_id_to_db:
+            if not sample_id_to_db in ds_db.columns:
+                _str = 'Provided through configuration sample id column ({}) was not found in the current dataset. ' \
+                       'Aborting the process.' \
+                    .format(sample_id_to_db)
+                self.logger.error(_str)
+                self.error.add_error(_str)
+                return False
+        else:
+            _str = 'No sample id column name was provided in the current configuration file (key: "{}"). ' \
+                   'Aborting the process.' \
+                .format('DATA/output_dataset/sample_id')
+            self.logger.error(_str)
+            self.error.add_error(_str)
+            return False
+
+        # get dataset's headers converted to a dictionary format
+        row_dict = self.get_file_dictionary(ds_db, True, "name")
+        # prepare config object to pass to MetadataDB object
+        # dict2.update(dict1)
+        cfg_mdb = self.cfg.get_value('DATA/record_dictionary')
+        cfg_mdb.update(self.cfg.get_value('DB'))
 
         # TODO: Submit record by record from the result dataset to MDB
+        mdb = MetadataDB(None, cfg_mdb)
+
+        r_cnt = 0
         # loop through the final dataset
-        for index, row in self.ds.iterrows():
-            print(row["sample_id"], row["subject_id"])
+        for row in ds_db.to_dict(orient='records'):
+            # print(row)
+            # print(json.dumps(row))
+            r_cnt += 1
 
-        # print (self.ds[self.ds._rule3_ == True])
-        # print(self.ds[self.ds._rule3_ == False])
+            if not self.error.errors_exist():
+                self.logger.info(
+                    'Record #{}. Proceeding to save it to database. Row data: {}'.format(r_cnt, row))
+                # TODO: receive status returned by DB in a separate variable
+                mdb_resp = mdb.submit_row(
+                    row[sample_id_to_db],
+                    json.dumps(row),
+                    json.dumps(row_dict),
+                    self.api_process_name,
+                    self.logger,
+                    self.error
+                )
+
+                if not self.error.errors_exist():
+                    _str = 'Record #{}. Sample Id "{}" was submitted to MDB. Status: {}; Description: {}'.format(
+                        r_cnt, row[sample_id_to_db], mdb_resp[0][0]['status'], mdb_resp[0][0]['description'])
+                    self.logger.info(_str)
+                    # TODO: apply the same approach for the rows processed from a file
+                    if mdb_resp[0][0]['status'] != 'OK':
+                        if not self.db_response_alerts:
+                            self.db_response_alerts = []
+                        self.db_response_alerts.append(
+                            {'sample_id':row[sample_id_to_db],
+                             'status': mdb_resp[0][0]['status'],
+                             'description': mdb_resp[0][0]['description'] }
+                        )
+
+                else:
+                    _str = 'Record #{}. Error occured during submitting sample Id "{}" to MDB. Error details: {}'.format(
+                        r_cnt, row[sample_id_to_db], self.error.get_errors_to_str())
+                    self.logger.error(_str)
+
+        # report error summary of processing api dataset
+        self.logger.info('SUMMARY OF ERRORS and Alerts ==============>')
+        self.logger.info('Critical errors: {}'.format(
+            self.error.get_errors_to_str())) if self.error.errors_exist() else self.logger.info(
+            'No critical errors were identified.')
+
+        if self.validation_alerts:
+            self.logger.warning('The following are {} identified validation alert(s):\n{}'
+                             .format(len(self.validation_alerts),
+                                     '\n'.join([str(va) for va in self.validation_alerts])))
+        else:
+            self.logger.info('No validation alerts were identified during processing.')
+
+        if self.db_response_alerts:
+            self.logger.warning('The following are {} received database response alert(s):\n{}'
+                             .format(len(self.db_response_alerts),
+                                     '\n'.join([str(da) for da in self.db_response_alerts])))
+        else:
+            self.logger.info('No validation alerts were identified during processing.')
 
         pass
 
-        self.headers = None
-        self.get_headers()
-        pass
+    def get_file_dictionary(self, dataset, sort=None, sort_by_field=None):
+        if not sort:
+            sort = False
+        if not sort_by_field:
+            sort_by_field = ''
 
-    def get_headers(self):
-        """
-        if not self.headers:
-            if self.ds and len(self.ds) > 0:
-                self.headers = [k for k in self.ds[0].keys()]
-            else:
-                self.headers = None
-        return self.headers
-        """
+        # get configuration object reference
+        cfg = self.cfg.get_value('DATA/record_dictionary')
+        # get dataset's headers
+        hdrs = dataset.columns
+        dict = cm2.get_dataset_dictionary (hdrs, cfg, sort, sort_by_field)
+        return dict
 
     # retrieve a reference for a column object from a dataframe
     def get_df_col_obj(self, df_col_name, data_frame = None):
