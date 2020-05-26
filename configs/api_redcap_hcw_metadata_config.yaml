@@ -25,13 +25,15 @@ DATA:
   # - function self.get_df_col_obj will return value of the column from a data frame based on the column's name provided
   validation_rules:
     -
-      rule: "eval!self.get_df_col_obj('visit_complete') == 'Unverified'"
-      report_failure:
-      message:
+      rule: "eval!self.get_df_col_obj('visit_complete') == 'Complete'" # Unverified
+      report_failure: True
+      report_columns: ["sample_id", "sample_type", "subject_id", "redcap_event_name"]
+      message: Visit section was not finalized yet.
     -
       rule: "eval!self.get_df_col_obj('registration_complete') == 'Complete'"
-      report_failure:
-      message:
+      report_failure: True
+      report_columns: ["sample_id", "sample_type", "subject_id", "redcap_event_name"]
+      message: Registration section was not finalized yet.
     - # this rule reconstructs expected sample id value and compares it to the actually submitted one
       rule: >
         eval!self.get_df_col_obj('sample_id') ==
@@ -129,7 +131,7 @@ DATA:
 
 DB:
   #metadata DB study id
-  mdb_study_id: 27
+  mdb_study_id: 127
   # this will be sent to MDB; 0: not allow, 1: allow. It reflects if dictionary structure can be updated if the new version of dictionary differs from the existing one (i.e. a new field was added)
   mdb_allow_dict_update: 1
   # this will be sent to MDB; 0: not allow, 1: allow. It reflects if sample's json string stored in DB can be updated with the new version if it differs from the existing one (i.e. a case when some corrections were provided to early sent file)

@@ -16,6 +16,7 @@ class ApiDataset():
         self.validation_rules = None
         self.validation_alerts = None  # TODO: add functionality to report alerts to users through email
         self.db_response_alerts = None  # TODO: add functionality to report alerts to users through email
+        self.dataset_dictionary = None
 
         try:
             # self.json_obj = json.loads(api_dataset_str)
@@ -32,19 +33,14 @@ class ApiDataset():
         self.unpivot_cfg = self.cfg.get_value('DATA/transform/unpivot')
         if self.unpivot_cfg and self.unpivot_cfg['apply']:
             self.unpivot_dataset()
-        """
-        self.ds = pd.melt(self.ds,
-                      id_vars = ['subject_id', 'redcap_event_name', 'visit_complete'],
-                      value_vars=['sst_id','paxgene_id', 'cpt_id_1', 'tempus_id', 'saliva_id'],
-                      var_name='sample_type',
-                      value_name='sample_id'
-                      )
-        """
-        # ds2 = ds1[(ds1['subject_id'] == "H001")]
-        print(self.ds)
+
+        # print(self.ds)
 
         self.prepare_dataset_validation_columns()
-        print(self.ds)
+        # print(self.ds)
+
+        # set dataframe option, so it prints all rows
+        pd.set_option('display.max_rows', None)
 
         # select only records that satisfy all validation rules
         for valid_rule in self.validation_rules:
@@ -58,15 +54,22 @@ class ApiDataset():
                                 ds_failed[valid_rule['report_columns']]
                                 if 'report_columns' in valid_rule.keys()
                                 else 'No columns to display were provided for the current rule...')
+                    _str_html = '<font color="red">Dataset validation failed for {} record(s). Error message: "{}".</font> ' \
+                           '<br/>Data extract for affected rows:<br/>{}' \
+                        .format(ds_failed.shape[0], valid_rule['message'],
+                                ds_failed[valid_rule['report_columns']].to_html()
+                                if 'report_columns' in valid_rule.keys()
+                                else 'No columns to display were provided for the current rule...')
+
 
                     self.logger.warning(_str)
                     # add validation alert to the validation alert list
                     if not self.validation_alerts:
                         self.validation_alerts = []
-                    self.validation_alerts.append(_str)
+                    self.validation_alerts.append({'text': _str, 'html': _str_html})
 
                 # filter out records that do not satisfy the current validation rule
-                #### self.ds = self.ds[self.ds[valid_rule['name']] == True]  # Might be commented for testin only!!!!
+                #### self.ds = self.ds[self.ds[valid_rule['name']] == True]  # TODO: Must be un-commented for testin only!!!!
                 # print(self.ds)
                 # print(ds_failed)
             else:
@@ -110,13 +113,12 @@ class ApiDataset():
             return False
 
         # get dataset's headers converted to a dictionary format
-        row_dict = self.get_file_dictionary(ds_db, True, "name")
+        row_dict = self.get_dataset_dictionary(ds_db, True, "name")
         # prepare config object to pass to MetadataDB object
         # dict2.update(dict1)
         cfg_mdb = self.cfg.get_value('DATA/record_dictionary')
         cfg_mdb.update(self.cfg.get_value('DB'))
 
-        # TODO: Submit record by record from the result dataset to MDB
         mdb = MetadataDB(None, cfg_mdb)
 
         r_cnt = 0
@@ -167,7 +169,7 @@ class ApiDataset():
         if self.validation_alerts:
             self.logger.warning('The following are {} identified validation alert(s):\n{}'
                              .format(len(self.validation_alerts),
-                                     '\n'.join([str(va) for va in self.validation_alerts])))
+                                     '\n'.join([str(va['text']) for va in self.validation_alerts])))
         else:
             self.logger.info('No validation alerts were identified during processing.')
 
@@ -180,18 +182,19 @@ class ApiDataset():
 
         pass
 
-    def get_file_dictionary(self, dataset, sort=None, sort_by_field=None):
-        if not sort:
-            sort = False
-        if not sort_by_field:
-            sort_by_field = ''
+    def get_dataset_dictionary(self, dataset, sort=None, sort_by_field=None):
+        if not self.dataset_dictionary:
+            if not sort:
+                sort = False
+            if not sort_by_field:
+                sort_by_field = ''
 
-        # get configuration object reference
-        cfg = self.cfg.get_value('DATA/record_dictionary')
-        # get dataset's headers
-        hdrs = dataset.columns
-        dict = cm2.get_dataset_dictionary (hdrs, cfg, sort, sort_by_field)
-        return dict
+            # get configuration object reference
+            cfg = self.cfg.get_value('DATA/record_dictionary')
+            # get dataset's headers
+            hdrs = dataset.columns
+            self.dataset_dictionary = cm2.get_dataset_dictionary (hdrs, cfg, sort, sort_by_field)
+        return self.dataset_dictionary
 
     # retrieve a reference for a column object from a dataframe
     def get_df_col_obj(self, df_col_name, data_frame = None):
@@ -247,7 +250,8 @@ class ApiDataset():
                               )
                 # print(self.ds)
             except Exception as ex:
-                _str = 'Error "{}" occurred while unpivoting dataset received from the API call. Here is the unpivot columns loaded from the config file "{}".\n{} ' \
+                _str = 'Error "{}" occurred while unpivoting dataset received from the API call. ' \
+                       'Here is the unpivot columns loaded from the config file "{}".\n{} ' \
                     .format(ex, unpivot_vars, traceback.format_exc())
                 self.logger.error(_str)
                 self.error.add_error(_str)
