@@ -1,3 +1,4 @@
+jinja2
 certifi
 pycurl
 pyodbc==4.0.26
