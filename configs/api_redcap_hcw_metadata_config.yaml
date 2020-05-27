@@ -27,11 +27,13 @@ DATA:
     -
       rule: "eval!self.get_df_col_obj('visit_complete') == 'Complete'" # Unverified
       report_failure: True
+      report_failure_details: False # if set to True, will report each failed row; if set to False, will report just total count
       report_columns: ["sample_id", "sample_type", "subject_id", "redcap_event_name"]
       message: Visit section was not finalized yet.
     -
       rule: "eval!self.get_df_col_obj('registration_complete') == 'Complete'"
       report_failure: True
+      report_failure_details: False # if set to True, will report each failed row; if set to False, will report just total count
       report_columns: ["sample_id", "sample_type", "subject_id", "redcap_event_name"]
       message: Registration section was not finalized yet.
     - # this rule reconstructs expected sample id value and compares it to the actually submitted one
@@ -48,6 +50,7 @@ DATA:
          'SLV' if x == 'saliva_id' else ''
         )
       report_failure: True
+      report_failure_details: True # if set to True, will report each failed row; if set to False, will report just total count
       report_columns: ["sample_id", "sample_type", "subject_id", "redcap_event_name"]
       message: Provided Sample ID do not match the expected Sample ID value for the row.
 

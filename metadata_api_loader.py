@@ -26,13 +26,12 @@ if __name__ == '__main__':
     email_msgs_apicalls = []
 
     mlog.info('Start processing API calls.')
-
+    api_proc_cnt = 0
     # get list of required API calls
     api_process_configs = m_cfg.get_value('API_process_configs')
     api_cfg = None
     if api_process_configs:
         mlog.info('The following api config files were loaded from the config file: {}'.format(api_process_configs))
-        api_proc_cnt = 0
         for api_cfg_file in api_process_configs:
             api_proc_cnt += 1
             ap = ApiProcess(api_cfg_file, mlog)
@@ -66,31 +65,44 @@ if __name__ == '__main__':
                 mlog.warning('API process based on "{}" file has failed. Check error message posted earlier.'
                              .format(api_cfg_file))
         mlog.info('Number of API calls processed = {}'.format(api_proc_cnt))
-
         if api_proc_cnt > 0:
             # collect final details and send email about processed API calls
             email_subject = 'Loading metadata through API calls'
-            email_body = 'Total of {} API data pulls were completed. See details for each data load below'\
+            email_body = 'Total of {} API data pulls were completed. See details for each data load below' \
                              .format(api_proc_cnt) \
                          + '<br/><br/>' + \
                          '<br/><br/>'.join(email_msgs_apicalls)
             # print ('email_subject = {}'.format(email_subject))
             # print('email_body = {}'.format(email_body))
-
-            try:
-                if m_cfg.get_value('Email/send_emails'):
-                    email.send_yagmail(
-                        emails_to=m_cfg.get_value('Email/sent_to_emails'),
-                        subject=email_subject,
-                        message=email_body,
-                        attachment_path=email_attchms_study
-                    )
-            except Exception as ex:
-                # report unexpected error during sending emails to a log file and continue
-                _str = 'Unexpected Error "{}" occurred during an attempt to send a status email ' \
-                       'upon finish processing API calls:\n{} '\
-                    .format(ex, traceback.format_exc())
-                mlog.critical(_str)
-
+        else:
+            # collect final details and send email about processed API calls
+            email_subject = 'No loading metadata through API calls were performed'
+            email_body = 'Total of {} API data pulls were completed.'.format(api_proc_cnt)
     else:
-        mlog.warning('No API config files were loaded based on the "API_process_configs" parameter of the main config file.')
+        _str = 'No API config files were loaded based on the "API_process_configs" parameter of the main config file.'
+        mlog.warning(_str)
+        # collect final details and send email about processed API calls
+        email_subject = 'No loading metadata through API calls were performed'
+        email_body = _str
+
+    # remove return characters from the body of the email, to keep just clean html code
+    email_body = email_body.replace("\r", "")
+    email_body = email_body.replace("\n", "")
+
+    # attempt to send status email
+    try:
+        if m_cfg.get_value('Email/send_emails'):
+            email.send_yagmail(
+                emails_to=m_cfg.get_value('Email/sent_to_emails'),
+                subject=email_subject,
+                message=email_body
+                # , attachment_path=email_attchms_study
+            )
+    except Exception as ex:
+        # report unexpected error during sending emails to a log file and continue
+        _str = 'Unexpected Error "{}" occurred during an attempt to send a status email ' \
+               'upon finish processing API calls:\n{} '\
+            .format(ex, traceback.format_exc())
+        mlog.critical(_str)
+
+    pass

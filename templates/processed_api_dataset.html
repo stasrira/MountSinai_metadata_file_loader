@@ -1,7 +1,4 @@
-<br/>
-API data pull process was performed.
-<br/>
-API process name: <b>{{process.name}}</b>
+API data pull for "<b>{{process.name}}</b>" process was performed.
 <br/>
 API config file: {{process.config_file}}
 <br/>
@@ -18,10 +15,11 @@ Total of <b>{{process.submitted_records}}</b> records were submitted to database
 <b>DB Response Alerts</b> -
 {% if process.db_response_alerts_count > 0 %}
     <font color="red"><b>The following DB response alerts were recorded:</b></font>
+    <ol>
     {% for db_response_alert in process.db_response_alerts %}
-        <br/>
-        {{db_response_alert}}
+        <li><font color="red">{{db_response_alert}}</font></li>
     {% endfor %}
+    </ol>
     </font>
 {% else %}
     <font color="green">No DB response alerts were recorded.</font>
@@ -30,10 +28,11 @@ Total of <b>{{process.submitted_records}}</b> records were submitted to database
 <b>Validation Alerts</b> -
 {% if process.validation_alerts_count > 0 %}
     <font color="red"><b>The following validation alerts were recorded:</b></font>
+    <ol>
     {% for valid_alert in process.validation_alerts %}
-        <br/>
-        {{valid_alert['html']}}
+        <li>{{valid_alert['html']}}</li>
     {% endfor %}
+    </ol>
     </font>
 {% else %}
     <font color="green">No validation alerts were recorded.</font>
@@ -45,3 +44,4 @@ Total of <b>{{process.submitted_records}}</b> records were submitted to database
 {% else %}
     <font color="green">No errors</font>
 {% endif %}
+<br/>

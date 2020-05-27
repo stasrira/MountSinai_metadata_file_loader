@@ -14,13 +14,11 @@ class ApiDataset():
 
         self.api_dataset_str = api_dataset_str
         self.validation_rules = None
-        self.validation_alerts = None  # TODO: add functionality to report alerts to users through email
-        self.db_response_alerts = None  # TODO: add functionality to report alerts to users through email
+        self.validation_alerts = None  # stores all generated validation alerts to be reported to users through email
+        self.db_response_alerts = None  # stores all generated response alerts to be reported to users through email
         self.dataset_dictionary = None
 
         try:
-            # self.json_obj = json.loads(api_dataset_str)
-            # self.ds = pd.DataFrame.from_dict(self.json_obj[0], orient="index")
             # load received json into a data frame object
             self.ds = pd.read_json(api_dataset_str)
         except Exception as ex:
@@ -42,41 +40,51 @@ class ApiDataset():
         # set dataframe option, so it prints all rows
         pd.set_option('display.max_rows', None)
 
-        # select only records that satisfy all validation rules
+        # report records that do not satisfy validation rules
         for valid_rule in self.validation_rules:
             if len(self.ds) > 0:
                 ds_failed = self.ds[self.ds[valid_rule['name']] == False]
                 # check if failed validation rule has to be reported
                 if 'report_failure' in valid_rule.keys() and valid_rule['report_failure']:
-                    _str = 'Dataset validation failed for {} record(s). Error message: "{}". ' \
-                           'Data extract for affected rows:\n{}'\
-                        .format(ds_failed.shape[0], valid_rule['message'],
-                                ds_failed[valid_rule['report_columns']]
-                                if 'report_columns' in valid_rule.keys()
-                                else 'No columns to display were provided for the current rule...')
-                    _str_html = '<font color="red">Dataset validation failed for {} record(s). Error message: "{}".</font> ' \
-                           '<br/>Data extract for affected rows:<br/>{}' \
-                        .format(ds_failed.shape[0], valid_rule['message'],
-                                ds_failed[valid_rule['report_columns']].to_html()
-                                if 'report_columns' in valid_rule.keys()
-                                else 'No columns to display were provided for the current rule...')
-
+                    if 'report_failure_details' in valid_rule.keys() and valid_rule['report_failure_details']:
+                        # proceed here if details of failed validation rules have to be reported
+                        _str = 'Dataset validation failed for {} record(s). Error message: "{}". ' \
+                               'Data extract for affected rows:\n{}'\
+                            .format(ds_failed.shape[0], valid_rule['message'],
+                                    ds_failed[valid_rule['report_columns']]
+                                    if 'report_columns' in valid_rule.keys()
+                                    else 'No columns to display were provided for the current rule...')
+                        df_html = ds_failed[valid_rule['report_columns']].to_html()
+                        df_html = df_html.replace('<table', '<table style="color: red"')
+                        _str_html = 'Dataset validation <font color="red">failed for {}</font> record(s). ' \
+                                    'Error message: "<font color="red">{}</font>".' \
+                                    '<br/>Data extract for affected rows:<br/>{}' \
+                            .format(ds_failed.shape[0], valid_rule['message'],
+                                    df_html  # ds_failed[valid_rule['report_columns']].to_html()
+                                    if 'report_columns' in valid_rule.keys()
+                                    else 'No columns to display were provided for the current rule...')
+                    else:
+                        # proceed here if only summary of failed validation rules have to be reported
+                        _str = 'Dataset validation failed for {} record(s). Error message: "{}". ' \
+                            .format(ds_failed.shape[0], valid_rule['message'])
+                        _str_html = 'Dataset validation <font color="red">failed for {}</font> record(s). ' \
+                                    'Error message: "<font color="red">{}</font>". ' \
+                            .format(ds_failed.shape[0], valid_rule['message'])
 
                     self.logger.warning(_str)
                     # add validation alert to the validation alert list
                     if not self.validation_alerts:
                         self.validation_alerts = []
                     self.validation_alerts.append({'text': _str, 'html': _str_html})
-
-                # filter out records that do not satisfy the current validation rule
-                #### self.ds = self.ds[self.ds[valid_rule['name']] == True]  # TODO: Must be un-commented for testin only!!!!
-                # print(self.ds)
-                # print(ds_failed)
             else:
                 break
 
+        # select only records that satisfy all validation rules
+        for valid_rule in self.validation_rules:
+            # filter out records that do not satisfy the current validation rule
+            self.ds = self.ds[self.ds[valid_rule['name']] == True]  # TODO: Must be un-commented!!!!
 
-        print (self.ds)
+        # print (self.ds)
 
         # check that final dataset has some rows
         if len(self.ds) > 0:

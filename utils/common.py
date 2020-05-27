@@ -111,7 +111,7 @@ def perform_api_call(api_url, post_data, mlog_obj, error_obj):
         }
         """
         # data = post_data
-        print(post_data)
+        # print(post_data)
         pf = urlencode(post_data)
         ch = pycurl.Curl()
         ch.setopt(ch.URL, api_url)  # 'https://redcap.mountsinai.org/redcap/api/'
@@ -127,7 +127,7 @@ def perform_api_call(api_url, post_data, mlog_obj, error_obj):
         output = buf.getvalue()  # gets data in bytes
         # print(output)
         val_out = output.decode('UTF-8')  # convert data from bytes to string
-        print(val_out)
+        # print(val_out)
 
         buf.close()
 
@@ -179,5 +179,5 @@ def populate_email_template(template_name, template_feeder):
 
     template = env.get_template(template_name)
     output = template.render(process=template_feeder)
-    print(output)
+    # print(output)
     return output
