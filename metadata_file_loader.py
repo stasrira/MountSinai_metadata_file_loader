@@ -93,8 +93,16 @@ if __name__ == '__main__':
                         mlog.info('Finish processing {} file.'.format(fl_path))
                         fl_proc_cnt += 1
 
+                        # TODO: verify that the below counts works properly for text and excel files
+                        # get total count of rows in the file
+                        submitted_records = fl_ob.db_submitted_count
+                        # get count of "ERROR" responses from attempts to submit data to DB
+                        db_response_alerts_count = len(fl_ob.db_response_alerts) if fl_ob.db_response_alerts else 0
+                        db_response_ok = submitted_records - db_response_alerts_count
+
                         # identify if any errors were identified and set status variable accordingly
-                        if not fl_ob.error.errors_exist() and fl_ob.error.row_errors_count() == 0:
+                        if not fl_ob.error.errors_exist() and fl_ob.error.row_errors_count() == 0 \
+                                and db_response_alerts_count == 0:
                             fl_status = 'OK'
                             _str = 'Processing status: "{}"; file: {}'.format(fl_status, fl_path)
                         else:
@@ -123,6 +131,22 @@ if __name__ == '__main__':
                         mlog.info('Processed file "{}" was moved and renamed as: "{}"'
                                   .format(fl_path, processed_dir / fl_processed_name))
 
+                        # create a dictionary to feed into template for preparing an email body
+                        template_feeder = {
+                            'file_name': fl_path,
+                            'file_name_new': processed_dir / fl_processed_name,
+                            'log_file': fl_ob.log_handler.baseFilename,
+                            'submitted_records': submitted_records,
+                            'db_response_ok': db_response_ok,
+                            'db_response_alerts_count': db_response_alerts_count,
+                            'db_response_alerts': fl_ob.db_response_alerts,
+                            'file_errors_present': fl_ob.error.errors_exist(),
+                            'row_errors_present': fl_ob.error.row_errors_count()
+                        }
+                        email_body_part = cm.populate_email_template('processed_file.html', template_feeder)
+                        email_msgs_study.append(email_body_part)
+
+                        """
                         # preps for email notification
                         email_msgs_study.append(
                                     ('File <br/>"{}" <br/> was processed and moved/renamed to <br/> "{}".'
@@ -142,7 +166,7 @@ if __name__ == '__main__':
                                      )
                         )
                         email_attchms_study.append(fl_ob.log_handler.baseFilename)
-
+                        """
                         # print ('email_msgs_study = {}'.format(email_msgs_study))
 
                         fl_ob = None
@@ -164,13 +188,17 @@ if __name__ == '__main__':
                 # print ('email_subject = {}'.format(email_subject))
                 # print('email_body = {}'.format(email_body))
 
+                # remove return characters from the body of the email, to keep just clean html code
+                email_body = email_body.replace("\r", "")
+                email_body = email_body.replace("\n", "")
+
                 try:
                     if m_cfg.get_value('Email/send_emails'):
                         email.send_yagmail(
                             emails_to = m_cfg.get_value('Email/sent_to_emails'),
                             subject = email_subject,
-                            message = email_body,
-                            attachment_path = email_attchms_study
+                            message = email_body
+                            # ,attachment_path = email_attchms_study
                         )
                 except Exception as ex:
                     # report unexpected error during sending emails to a log file and continue

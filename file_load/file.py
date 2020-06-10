@@ -11,17 +11,6 @@ from csv import reader
 
 #  Text file class (used as a base)
 class File:
-    filepath = None
-    wrkdir = None
-    filename = None
-    file_type = None  # 1:text, 2:excel
-    file_delim = None  # ','
-    lineList = None  # []
-    __headers = None  # []
-    error = None  # FileErrors class reference holding all errors associated with the current file
-    sample_id_field_names = None  # []
-    loaded = None
-    logger = None
 
     def __init__(self, filepath, file_type=1, file_delim=',', replace_blanks_in_header = True):
         self.filepath = filepath
@@ -36,6 +25,7 @@ class File:
         self.loaded = False
         self.header_row_num = 1  # default header row number
         self.replace_blanks_in_header = replace_blanks_in_header
+        self.logger = None
         self.log_handler = None
 
     @property

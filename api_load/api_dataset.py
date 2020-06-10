@@ -155,6 +155,7 @@ class ApiDataset():
                     self.logger.info(_str)
                     # TODO: apply the same approach for the rows processed from a file
                     if mdb_resp[0][0]['status'] != 'OK':
+                        # if db response status is not OK, record it to the db_response_alerts list
                         if not self.db_response_alerts:
                             self.db_response_alerts = []
                         self.db_response_alerts.append(

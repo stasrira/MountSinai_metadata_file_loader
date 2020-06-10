@@ -17,6 +17,7 @@ class MetaFileText(File):
 
         # TODO: implement logic to read values from self.db_response_alerts and report those in the email notification
         self.db_response_alerts = None  # keeps list of notifications form DB submissions that returned not OK status
+        self.db_submitted_count = 0 #keeps count of submitted to DB rows
         cfg_file = None
         file_dict = None  # OrderedDict()
         rows = None  # OrderedDict()
@@ -334,6 +335,10 @@ class MetaFileText(File):
                     self.logger.info(
                         'Row #{}. No Row level errors were identified. Saving it to database. Row data: {}'.format(
                             row.row_number, row.to_str()))
+
+                    # increase count of submitted to DB rows
+                    self.db_submitted_count += 1
+
                     mdb = MetadataDB(self.cfg_file)
 
                     # TODO: receive status returned by DB in a separate variable
@@ -343,7 +348,7 @@ class MetaFileText(File):
                         self.get_file_dictionary_json(True),
                         self.filepath,
                         self.logger,
-                        self.row.error
+                        row.error
                     )
                     if not row.error.errors_exist():
                         _str = 'Row #{}. Sample Id "{}" was submitted to MDB. Status: {}; Description: {}'.format(
