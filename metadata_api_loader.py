@@ -14,11 +14,12 @@ from api_load import ApiProcess
 if __name__ == '__main__':
 
     # load main config file and get required values
+    gc.CURRENT_PROCCESS_LOG_ID = 'api_load'
     m_cfg = ConfigData(gc.MAIN_CONFIG_FILE)
 
     # setup application level logger
     cur_dir = Path(os.path.dirname(os.path.abspath(__file__)))
-    mlog = cm.setup_logger(m_cfg, cur_dir)
+    mlog = cm.setup_logger(m_cfg, cur_dir, gc.CURRENT_PROCCESS_LOG_ID)
 
     # validate expected environment variables; if some variable are not present, abort execution
     cm.validate_available_envir_variables(mlog, m_cfg, ['default', 'redcap'])

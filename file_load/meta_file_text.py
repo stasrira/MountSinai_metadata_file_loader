@@ -15,7 +15,6 @@ class MetaFileText(File):
     def __init__(self, filepath, cfg_path='', file_type=1, file_delim=','):
         File.__init__(self, filepath, file_type, file_delim)
 
-        # TODO: implement logic to read values from self.db_response_alerts and report those in the email notification
         self.db_response_alerts = None  # keeps list of notifications form DB submissions that returned not OK status
         self.db_submitted_count = 0 #keeps count of submitted to DB rows
         cfg_file = None
@@ -341,7 +340,6 @@ class MetaFileText(File):
 
                     mdb = MetadataDB(self.cfg_file)
 
-                    # TODO: receive status returned by DB in a separate variable
                     mdb_resp = mdb.submit_row(
                         row.sample_id,
                         row.to_json(),

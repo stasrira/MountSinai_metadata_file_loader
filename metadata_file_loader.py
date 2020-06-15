@@ -12,12 +12,13 @@ from utils import ConfigData, common as cm, global_const as gc, send_email as em
 # if executed by itself, do the following
 if __name__ == '__main__':
 
+    gc.CURRENT_PROCCESS_LOG_ID = 'file_load'
     # load main config file and get required values
     m_cfg = ConfigData(gc.MAIN_CONFIG_FILE)
 
     # setup application level logger
     cur_dir = Path(os.path.dirname(os.path.abspath(__file__)))
-    mlog = cm.setup_logger(m_cfg, cur_dir)
+    mlog = cm.setup_logger(m_cfg, cur_dir, gc.CURRENT_PROCCESS_LOG_ID)
 
     # validate expected environment variables; if some variable are not present, abort execution
     cm.validate_available_envir_variables(mlog, m_cfg, ['default'])
@@ -93,7 +94,6 @@ if __name__ == '__main__':
                         mlog.info('Finish processing {} file.'.format(fl_path))
                         fl_proc_cnt += 1
 
-                        # TODO: verify that the below counts works properly for text and excel files
                         # get total count of rows in the file
                         submitted_records = fl_ob.db_submitted_count
                         # get count of "ERROR" responses from attempts to submit data to DB

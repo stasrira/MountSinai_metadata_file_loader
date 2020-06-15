@@ -1,7 +1,14 @@
 # ========== config file names
 # main config file name
 CONFIGS_DIR = 'configs/'
-MAIN_CONFIG_FILE = CONFIGS_DIR + 'main_config.yaml'
+CURRENT_PROCCESS_LOG_ID = ''
+MAIN_CONFIG_FILE_NAME = 'main_config.yaml'
+# MAIN_CONFIG_FILE = CONFIGS_DIR + 'main_config.yaml'
+MAIN_CONFIG_FILE = \
+    '{}_{}_{}'.format(CONFIGS_DIR, CURRENT_PROCCESS_LOG_ID, MAIN_CONFIG_FILE_NAME) \
+        if len(CURRENT_PROCCESS_LOG_ID.strip()) > 0 \
+        else '{}{}'.format(CONFIGS_DIR, MAIN_CONFIG_FILE_NAME)
+
 # study level default name for the config file
 DEFAULT_STUDY_CONFIG_FILE = 'study.cfg.yaml'
 

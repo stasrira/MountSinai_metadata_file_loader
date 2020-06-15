@@ -139,7 +139,6 @@ class ApiDataset():
             if not self.error.errors_exist():
                 self.logger.info(
                     'Record #{}. Proceeding to save it to database. Row data: {}'.format(r_cnt, row))
-                # TODO: receive status returned by DB in a separate variable
                 mdb_resp = mdb.submit_row(
                     row[sample_id_to_db],
                     json.dumps(row),
@@ -153,7 +152,6 @@ class ApiDataset():
                     _str = 'Record #{}. Sample Id "{}" was submitted to MDB. Status: {}; Description: {}'.format(
                         r_cnt, row[sample_id_to_db], mdb_resp[0][0]['status'], mdb_resp[0][0]['description'])
                     self.logger.info(_str)
-                    # TODO: apply the same approach for the rows processed from a file
                     if mdb_resp[0][0]['status'] != 'OK':
                         # if db response status is not OK, record it to the db_response_alerts list
                         if not self.db_response_alerts:
@@ -213,8 +211,8 @@ class ApiDataset():
             val_out = data_frame[df_col_name]
         except Exception:
             val_out = None
-            # TODO: Add a log message about error
-
+            self.logger.warning('Column "{}" cannot be retrieved from the currently being processed dataset.'
+                                .format(df_col_name))
         return val_out
 
     # prepares a separate column for each of the provided validation rules where target columns stores True of False

@@ -2,11 +2,12 @@ from pathlib import Path
 import os
 import time
 import traceback
-from utils import global_const as gc
 from jinja2 import Environment, FileSystemLoader, escape
-
-# from utils import setup_logger_common TODO: figure out how to import setup_logger_common from utils module
+from utils import global_const as gc
+# from utils import setup_logger_common  # TODO: figure out how to import setup_logger_common from utils module
 from .log_utils import setup_logger_common
+
+
 
 
 def get_project_root():
@@ -69,7 +70,7 @@ def validate_available_envir_variables (mlog, m_cfg, env_cfg_groups = None):
             mlog.info('All required environment variables were found.')
 
 
-def setup_logger(m_cfg, log_dir_location):
+def setup_logger(m_cfg, log_dir_location, cur_proc_name_prefix = None):
     # get logging related config values
     common_logger_name = gc.MAIN_LOG_NAME
     log_folder_name = gc.LOG_FOLDER_NAME
@@ -77,8 +78,14 @@ def setup_logger(m_cfg, log_dir_location):
     # get current location of the script and create Log folder
     # wrkdir = Path(os.path.dirname(os.path.abspath(__file__))) / log_folder_name  # 'logs'
     wrkdir = Path(log_dir_location) / log_folder_name
-    lg_filename = time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log'
+
+    # lg_filename = time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log'
+    if not cur_proc_name_prefix:
+        lg_filename = '{}_{}'.format(time.strftime("%Y%m%d_%H%M%S", time.localtime()),'.log')
+    else:
+        lg_filename = '{}_{}_{}'.format(cur_proc_name_prefix, time.strftime("%Y%m%d_%H%M%S", time.localtime()), '.log')
     # setup logger
+
     lg = setup_logger_common(common_logger_name, logging_level, wrkdir, lg_filename)  # logging_level
     mlog = lg['logger']
     return mlog
@@ -95,7 +102,6 @@ def perform_api_call(api_url, post_data, mlog_obj, error_obj):
     val_out = None
     errors_reported = False
 
-    #TODO: add user friendly handler for errors returned from the remote server
     try:
         buf =  BytesIO()  # StringIO()  #
         """

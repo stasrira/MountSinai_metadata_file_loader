@@ -78,7 +78,6 @@ class MetadataDB:
         logger_obj.info('SQL Procedure call = {}'.format(str_proc))
         # print ('procedure (str_proc) = {}'.format(str_proc))
 
-        # TODO: if procedure execution does not fail but return back status saying "ERROR:", record an error for the row
         try:
             cursor = self.conn.cursor()
             cursor.execute(str_proc)
@@ -90,7 +89,6 @@ class MetadataDB:
             for row in rows:
                 results.append(dict(zip(columns, row)))
             rs_out.append(results)
-            # TODO: return status and rs_out as 2 separate values, so the status can be interpreted by receiver
             return rs_out
 
         except Exception as ex:
