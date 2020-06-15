@@ -1,0 +1,141 @@
+API:
+  name: API load for RedCap-HRHCW study
+  url: "https://redcap.mountsinai.org/redcap/api/"
+  post_fields:
+    {
+    "token": "eval!os.environ.get('REDCAP_HCW_TOKEN')",
+    "content": "report",
+    "format": "json",
+    "report_id": "24219",
+    "rawOrLabel": "label",
+    "rawOrLabelHeaders": "raw",
+    "exportCheckboxLabel": "true",
+    "returnFormat": "json"
+    }
+
+DATA:
+
+  # - each condition will be used to create a dynamic column in the data frame object and should return boolean
+  # - each condition should return True to pass validation
+  # - all records with status False will be filtered out from the dataset
+  # - order of the validation rules matters, since the later rules will deal only with records survived previous rules
+  #   first rules should be more generic to fitler more records as possible
+  # - rules without report_failure = True won't be reported to the user and assumed a normal case, i.e not finalized row, etc.
+  # - 'eval!' signals to code that condition should be evaluated with eval function
+  # - function self.get_df_col_obj will return value of the column from a data frame based on the column's name provided
+  validation_rules:
+    -
+      rule: "eval!self.get_df_col_obj('visit_complete') == 'Complete'" # Unverified
+      report_failure: True
+      report_failure_details: False # if set to True, will report each failed row; if set to False, will report just total count
+      report_columns: ["sample_id", "sample_type", "subject_id", "redcap_event_name"]
+      message: Visit section was not finalized yet.
+    -
+      rule: "eval!self.get_df_col_obj('registration_complete') == 'Complete'"
+      report_failure: True
+      report_failure_details: False # if set to True, will report each failed row; if set to False, will report just total count
+      report_columns: ["sample_id", "sample_type", "subject_id", "redcap_event_name"]
+      message: Registration section was not finalized yet.
+    - # this rule reconstructs expected sample id value and compares it to the actually submitted one
+      rule: >
+        eval!self.get_df_col_obj('sample_id') ==
+        'M' + self.get_df_col_obj('subject_id') +
+        'V' + self.get_df_col_obj('redcap_event_name').str[-2:].str.replace(' ', '0') +
+        self.get_df_col_obj('sample_type').apply(
+         lambda x:
+         'SST' if x == 'sst_id' else
+         'PAX' if x == 'paxgene_id' else
+         'CPT' if x == 'cpt_id_1' else
+         'TMP' if x == 'tempus_id' else
+         'SLV' if x == 'saliva_id' else ''
+        )
+      report_failure: True
+      report_failure_details: True # if set to True, will report each failed row; if set to False, will report just total count
+      report_columns: ["sample_id", "sample_type", "subject_id", "redcap_event_name"]
+      message: Provided Sample ID do not match the expected Sample ID value for the row.
+
+  transform:
+    unpivot: # used in cases when one received record should be transformed in to several sample entries (i.e. HCW)
+      apply: True
+      unpivot_vars: ["sst_id","paxgene_id", "cpt_id_1", "tempus_id", "saliva_id"] # columns that will be combined in one
+      unpivot_var_name: sample_type # new column created instead of the unpivoted ones, storing original column's names
+      unpivot_value_name: sample_id # new column created instead of the unpivoted ones, storing original column's values
+      unpivot_preserved_columns:
+        - "subject_id"
+        - "redcap_event_name"
+        - "collection_age"
+        - "sex"
+        - "race"
+        - "ethnicity"
+        - "current_viral"
+        - "prior_infection"
+        - "infection_details"
+        - "antibiotic_use"
+        - "antiobiotic_details"
+        - "risk_factors"
+        - "other_risk"
+        - "clinical_start_date"
+        - "role"
+        - "role_other"
+        - "height"
+        - "weight"
+        - "bmi"
+        - "temp"
+        - "bp"
+        - "pulse"
+        - "respiration"
+        - "location_change"
+        - "ppe_use"
+        - "ppe_details"
+
+  output_dataset:
+    sample_id: "sample_id"
+    columns_to_db:
+    - "sample_id"
+    - "subject_id"
+    - "redcap_event_name"
+    - "collection_age"
+    - "sex"
+    - "race"
+    - "ethnicity"
+    - "current_viral"
+    - "prior_infection"
+    - "infection_details"
+    - "antibiotic_use"
+    - "antiobiotic_details"
+    - "risk_factors"
+    - "other_risk"
+    - "clinical_start_date"
+    - "role"
+    - "role_other"
+    - "height"
+    - "weight"
+    - "bmi"
+    - "temp"
+    - "bp"
+    - "pulse"
+    - "respiration"
+    - "location_change"
+    - "ppe_use"
+    - "ppe_details"
+
+  record_dictionary:
+    #this a default delimiter character to separate config values provided as a list
+    config_value_list_separator: ","
+
+    #JSON template for dictionary
+    dict_tmpl: {"field":[{"description":"","encoding":"null","label":"","type":"varchar","name":""}]}
+    #name of the dictionary element (from dict_tmpl) holding array of fields of this dictionary
+    dict_tmpl_fields_node: field
+    #list of the fields in the dict_field_tmpl that has to be updated with the actual values - name of the field header
+    dict_field_tmpl_update_fields: label,name
+    #name of the field in the dict_field_tmpl to sort dictionary content by default
+    dict_field_sort_by: name
+
+DB:
+  #metadata DB study id
+  mdb_study_id: 127
+  # this will be sent to MDB; 0: not allow, 1: allow. It reflects if dictionary structure can be updated if the new version of dictionary differs from the existing one (i.e. a new field was added)
+  mdb_allow_dict_update: 1
+  # this will be sent to MDB; 0: not allow, 1: allow. It reflects if sample's json string stored in DB can be updated with the new version if it differs from the existing one (i.e. a case when some corrections were provided to early sent file)
+  mdb_allow_sample_update: 1

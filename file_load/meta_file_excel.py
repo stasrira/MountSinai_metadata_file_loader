@@ -20,6 +20,9 @@ class MetaFileExcel(MetaFileText):
 
         File.__init__(self, filepath, file_type)
 
+        self.db_response_alerts = None  # keeps list of notifications form DB submissions that returned not OK status
+        self.db_submitted_count = 0  # keeps count of submitted to DB rows
+
         self.logger = self.setup_logger(self.wrkdir, self.filename)
         self.logger.info('Start working with file {}'.format(filepath))
 

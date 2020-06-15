@@ -1,6 +1,14 @@
 # ========== config file names
 # main config file name
-MAIN_CONFIG_FILE = 'main_config.yaml'
+CONFIGS_DIR = 'configs/'
+CURRENT_PROCCESS_LOG_ID = ''
+MAIN_CONFIG_FILE_NAME = 'main_config.yaml'
+# MAIN_CONFIG_FILE = CONFIGS_DIR + 'main_config.yaml'
+MAIN_CONFIG_FILE = \
+    '{}_{}_{}'.format(CONFIGS_DIR, CURRENT_PROCCESS_LOG_ID, MAIN_CONFIG_FILE_NAME) \
+        if len(CURRENT_PROCCESS_LOG_ID.strip()) > 0 \
+        else '{}{}'.format(CONFIGS_DIR, MAIN_CONFIG_FILE_NAME)
+
 # study level default name for the config file
 DEFAULT_STUDY_CONFIG_FILE = 'study.cfg.yaml'
 
@@ -27,6 +35,10 @@ DEFAULT_STUDY_CONFIG_FILE_EXT = '.cfg.yaml'
 # database related constants
 # predefined paths in the main config file for database related parameters
 CFG_DB_CONN = 'DB/mdb_conn_str'  # name of the config parameter storing DB connection string
+CFG_DB_USER_NAME_PL_HOLDER = 'DB/db_user_name_pl_holder'
+CFG_DB_USER_PWD_PL_HOLDER = 'DB/db_user_pwd_pl_holder'
+CFG_DB_USER_NAME = 'DB/env_db_user_name'
+CFG_DB_USER_PWD = 'DB/env_db_user_pwd'
 CFG_DB_SQL_PROC = 'DB/mdb_sql_proc_load_sample'  # name of the config parameter storing DB name of the stored proc
 # predefined names for stored procedure parameters that being passed to procedure specified in "CFG_DB_SQL_PROC"
 CFG_FLD_TMPL_STUDY_ID = 'DB/fld_tmpl_study_id'
@@ -46,3 +58,6 @@ CFG_DB_ALLOW_SAMPLE_UPDATE = 'mdb_allow_sample_update'  # name of config param s
 
 # Excel processing related
 STUDY_EXCEL_WK_SHEET_NAME = 'wk_sheet_name'  # name of the worksheet name to be used for loading data from
+
+# API processing related
+YAML_EVAL_FLAG = 'eval!'

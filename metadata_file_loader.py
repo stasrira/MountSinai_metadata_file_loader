@@ -6,47 +6,42 @@ import getpass
 from os import walk
 import time
 import traceback
-from utils.log_utils import setup_logger_common
-from utils import ConfigData
-from utils import global_const as gc
-from utils import send_email as email
+from utils import ConfigData, common as cm, global_const as gc, send_email as email
+
 
 # if executed by itself, do the following
 if __name__ == '__main__':
 
+    gc.CURRENT_PROCCESS_LOG_ID = 'file_load'
     # load main config file and get required values
     m_cfg = ConfigData(gc.MAIN_CONFIG_FILE)
 
-    # print ('m_cfg = {}'.format(m_cfg.cfg))
-    # assign values
-    common_logger_name = gc.MAIN_LOG_NAME # m_cfg.get_value('Logging/main_log_name')
-    logging_level = m_cfg.get_value('Logging/main_log_level')
+    # setup application level logger
+    cur_dir = Path(os.path.dirname(os.path.abspath(__file__)))
+    mlog = cm.setup_logger(m_cfg, cur_dir, gc.CURRENT_PROCCESS_LOG_ID)
+
+    # validate expected environment variables; if some variable are not present, abort execution
+    cm.validate_available_envir_variables(mlog, m_cfg, ['default'])
+
+    # get data processing related config values
     datafiles_path = m_cfg.get_value('Location/data_folder')
     ignore_files = m_cfg.get_value('Location/ignore_files')
-    log_folder_name = gc.LOG_FOLDER_NAME
     processed_folder_name = gc.PROCESSED_FOLDER_NAME
-
     # datafiles_path = 'E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/DataFiles'
     df_path = Path(datafiles_path)
 
-    # get current location of the script and create Log folder
-    wrkdir = Path(os.path.dirname(os.path.abspath(__file__))) / log_folder_name  # 'logs'
-    lg_filename = time.strftime("%Y%m%d_%H%M%S", time.localtime()) + '.log'
-
-    lg = setup_logger_common(common_logger_name, logging_level, wrkdir, lg_filename)  # logging_level
-    mlog = lg['logger']
-
+    # perform initial validations
     mlog.info('Start processing files in "{}". '
               'Expected user login: "{}", Effective user: "{}"  '.format(df_path, os.getlogin(), getpass.getuser()))
 
-    # TODO: Verify that target directory (df_path) is accessable for the current user (under which the app is running)
-    # TODO: Identify the user under which the app is running if the df_path is not accessable
-
+    # Verify that target directory (df_path) is accessible for the current user (under which the app is running)
+    # Identify the user under which the app is running if the df_path is not accessible
     if not os.path.exists(df_path):
         mlog.error('Directory "{}" does not exist or not accessible for the current user. Aborting execution. '
                    'Expected user login: "{}", Effective user: "{}"  '.format(df_path, os.getlogin(), getpass.getuser()))
         exit(1)
 
+    # start processing metadata files at the appropriate locations
     try:
 
         (_, dirstudies, _) = next(walk(df_path))
@@ -99,8 +94,15 @@ if __name__ == '__main__':
                         mlog.info('Finish processing {} file.'.format(fl_path))
                         fl_proc_cnt += 1
 
+                        # get total count of rows in the file
+                        submitted_records = fl_ob.db_submitted_count
+                        # get count of "ERROR" responses from attempts to submit data to DB
+                        db_response_alerts_count = len(fl_ob.db_response_alerts) if fl_ob.db_response_alerts else 0
+                        db_response_ok = submitted_records - db_response_alerts_count
+
                         # identify if any errors were identified and set status variable accordingly
-                        if not fl_ob.error.errors_exist() and fl_ob.error.row_errors_count() == 0:
+                        if not fl_ob.error.errors_exist() and fl_ob.error.row_errors_count() == 0 \
+                                and db_response_alerts_count == 0:
                             fl_status = 'OK'
                             _str = 'Processing status: "{}"; file: {}'.format(fl_status, fl_path)
                         else:
@@ -129,6 +131,22 @@ if __name__ == '__main__':
                         mlog.info('Processed file "{}" was moved and renamed as: "{}"'
                                   .format(fl_path, processed_dir / fl_processed_name))
 
+                        # create a dictionary to feed into template for preparing an email body
+                        template_feeder = {
+                            'file_name': fl_path,
+                            'file_name_new': processed_dir / fl_processed_name,
+                            'log_file': fl_ob.log_handler.baseFilename,
+                            'submitted_records': submitted_records,
+                            'db_response_ok': db_response_ok,
+                            'db_response_alerts_count': db_response_alerts_count,
+                            'db_response_alerts': fl_ob.db_response_alerts,
+                            'file_errors_present': fl_ob.error.errors_exist(),
+                            'row_errors_present': fl_ob.error.row_errors_count()
+                        }
+                        email_body_part = cm.populate_email_template('processed_file.html', template_feeder)
+                        email_msgs_study.append(email_body_part)
+
+                        """
                         # preps for email notification
                         email_msgs_study.append(
                                     ('File <br/>"{}" <br/> was processed and moved/renamed to <br/> "{}".'
@@ -148,7 +166,7 @@ if __name__ == '__main__':
                                      )
                         )
                         email_attchms_study.append(fl_ob.log_handler.baseFilename)
-
+                        """
                         # print ('email_msgs_study = {}'.format(email_msgs_study))
 
                         fl_ob = None
@@ -170,13 +188,17 @@ if __name__ == '__main__':
                 # print ('email_subject = {}'.format(email_subject))
                 # print('email_body = {}'.format(email_body))
 
+                # remove return characters from the body of the email, to keep just clean html code
+                email_body = email_body.replace("\r", "")
+                email_body = email_body.replace("\n", "")
+
                 try:
                     if m_cfg.get_value('Email/send_emails'):
                         email.send_yagmail(
                             emails_to = m_cfg.get_value('Email/sent_to_emails'),
                             subject = email_subject,
-                            message = email_body,
-                            attachment_path = email_attchms_study
+                            message = email_body
+                            # ,attachment_path = email_attchms_study
                         )
                 except Exception as ex:
                     # report unexpected error during sending emails to a log file and continue

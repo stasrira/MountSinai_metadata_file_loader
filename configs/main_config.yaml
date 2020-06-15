@@ -1,10 +1,13 @@
 DB:
-    #dev conn string: Driver={SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;User=mt_internal_user;Password=se@lf0n1nt3rn@l
-    #prod conn string: Driver={ODBC Driver 17 for SQL Server};Server=10.160.20.65\SSQL_2016;Database=dw_motrpac;UID=mt_internal_user;PWD=se@lf0n1nt3rn@l
-    #    #DB connection string
-    mdb_conn_str: Driver={ODBC Driver 17 for SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;UID=mt_internal_user;PWD=se@lf0n1nt3rn@l # Driver={SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;User=mt_internal_user;Password=se@lf0n1nt3rn@l
+    # prod conn string: Driver={ODBC Driver 17 for SQL Server};Server=10.160.20.65\SSQL_2016;Database=dw_motrpac;UID=;PWD=;
+    # DB connection string
+    mdb_conn_str: Driver={ODBC Driver 17 for SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;UID={!db_user_name!};PWD={!db_user_pwd!}
+    db_user_name_pl_holder: "{!db_user_name!}"
+    db_user_pwd_pl_holder: "{!db_user_pwd!}"
+    env_db_user_name: APP_DB_USER_NAME
+    env_db_user_pwd: APP_DB_USER_PWD
     # name of the stored proc to be used to load samples to DB
-    mdb_sql_proc_load_sample: exec usp_load_single_sample @study_id = {study_id}, @sample_id ='{sample_id}', @json ='{smpl_json}', @dict_json='{dict_json}', @dict_path='{dict_path}', @filepath='{filepath}', @dict_update={dict_update}, @samlpe_update={samlpe_update}
+    mdb_sql_proc_load_sample: exec usp_load_single_sample @study_id = {study_id}, @sample_id ='{sample_id}', @json ='{smpl_json}', @dict_json='{dict_json}', @dict_path='{dict_path}', @data_source='{data_source}', @dict_update={dict_update}, @samlpe_update={samlpe_update}
 
     # name of field templates for updating of stored procedure parameters (specified in "mdb_sql_proc_load_sample")
     fld_tmpl_study_id: '{study_id}'
@@ -12,7 +15,7 @@ DB:
     fld_tmpl_row_json: '{smpl_json}'
     fld_tmpl_dict_json: '{dict_json}'
     fld_tmpl_dict_path: '{dict_path}'
-    fld_tmpl_filepath: '{filepath}'
+    fld_tmpl_filepath: '{data_source}'
     fld_tmpl_dict_update: '{dict_update}'
     fld_tmpl_samlpe_update: '{samlpe_update}'
 
@@ -36,7 +39,7 @@ Logging:
     #file log - log created for each processed file
 
     #defines log levels to be used for "main" and "file" logs. Usual values are INFO and DEBUG
-    main_log_level: DEBUG
+    main_log_level: INFO  # DEBUG
     file_log_level: DEBUG
 
     #name for the each type of log (moved to global_const.py)
@@ -51,5 +54,15 @@ Email:
     sent_to_emails: stasrirak.ms@gmail.com, stasrira@yahoo.com
     send_emails: True # expected values: True, False
 
+Validate:
+    # list of environment variable required to be set for a current user in order to run the application
+    environment_variables:
+        default: # default list of variables required for all runs
+            - APP_DB_USER_NAME
+            - APP_DB_USER_PWD
+        redcap: # list of variables required for RedCap run
+            - REDCAP_HCW_TOKEN
 
-
+API_process_configs:
+    - api_redcap_hcw_metadata_config.yaml
+    # - api_redcap_hcw_metadata_config.yaml # duplicated entry for testing only

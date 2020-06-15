@@ -1,3 +1,6 @@
+jinja2
+certifi
+pycurl
 pyodbc==4.0.26
 yagmail==0.11.220
 xlrd==1.2.0

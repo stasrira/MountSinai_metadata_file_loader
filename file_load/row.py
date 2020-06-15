@@ -71,7 +71,7 @@ class Row:
         method = cfg.get_item_by_key('sample_id_method').strip()  # split(delim)[0].
         try:
             sid_eval_req = eval(cfg.get_item_by_key('sample_id_eval_required'))
-        except Exception as ex:
+        except Exception:
             sid_eval_req = False
 
         for sf in fields:
@@ -96,7 +96,7 @@ class Row:
                             # this tests only values that can be evaluated as a number and after evaluation != source
                             if evl_cnt != cnt and str(evl_cnt).isdigit():
                                 cnt = '"' + cnt + '"'
-                        except Exception as ex:
+                        except Exception:
                             # ignore errors raised during evaluation of the cnt, this can be a case for strings
                             pass
 
