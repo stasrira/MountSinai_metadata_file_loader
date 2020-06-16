@@ -1,10 +1,11 @@
 from collections import OrderedDict
 from pathlib import Path
 import xlrd  # installation: pip install xlrd
-from .file_utils import StudyConfig, load_configuration
+from .file_utils import StudyConfig, load_configuration, setup_common_basic_file_parameters
 from .file import File
 from .meta_file_text import MetaFileText
 from utils import global_const as gc
+from distutils.util import strtobool
 
 
 # metadata Excel file class
@@ -24,6 +25,7 @@ class MetaFileExcel(MetaFileText):
         self.db_submitted_count = 0  # keeps count of submitted to DB rows
 
         self.logger = self.setup_logger(self.wrkdir, self.filename)
+
         self.logger.info('Start working with file {}'.format(filepath))
 
         self.logger.info('Loading config file.')
@@ -36,6 +38,19 @@ class MetaFileExcel(MetaFileText):
             self.cfg_file = StudyConfig.config_loc
             self.file_dict = OrderedDict()
             self.rows = OrderedDict()
+
+            setup_common_basic_file_parameters(self)
+            """
+            replace_blanks_in_header = self.cfg_file.get_item_by_key('replace_blanks_in_header')
+            # set parameter to True or False, if it was set likewise in the config, otherwise keep the default value
+            if replace_blanks_in_header.lower() in ['true', 'yes']:
+                self.replace_blanks_in_header = True
+            if replace_blanks_in_header.lower() in ['false', 'no']:
+                self.replace_blanks_in_header = False
+            header_row_num = self.cfg_file.get_item_by_key('header_row_number')
+            if header_row_num and header_row_num.isnumeric():
+                self.header_row_num = int(header_row_num)
+            """
 
             # self.sheet_name = ''
             self.sheet_name = sheet_name.strip()
@@ -81,7 +96,6 @@ class MetaFileExcel(MetaFileText):
                 for i in range(sheet.nrows):
                     # ln = sheet.row_values(i)
                     # print (ln)
-
                     ln = []
                     for j in range(sheet.ncols):
                         # print(sheet.cell_value(i, j))

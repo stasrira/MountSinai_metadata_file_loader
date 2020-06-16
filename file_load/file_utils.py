@@ -42,3 +42,17 @@ def load_configuration(fl_class, loc_cfg_path):
     StudyConfig.study_logging_level = StudyConfig.config_glb.get_value(gc.STUDY_LOGGING_LEVEL_CFG_PATH)
 
     return True
+
+def setup_common_basic_file_parameters(file_ob):
+    replace_blanks_in_header = file_ob.cfg_file.get_item_by_key('replace_blanks_in_header')
+    # set parameter to True or False, if it was set likewise in the config, otherwise keep the default value
+    if replace_blanks_in_header:
+        if replace_blanks_in_header.lower() in ['true', 'yes']:
+            file_ob.replace_blanks_in_header = True
+        if replace_blanks_in_header.lower() in ['false', 'no']:
+            file_ob.replace_blanks_in_header = False
+
+    # set header_row_number value, if provided in the config
+    header_row_num = file_ob.cfg_file.get_item_by_key('header_row_number')
+    if header_row_num and header_row_num.isnumeric():
+        file_ob.header_row_num = int(header_row_num)
