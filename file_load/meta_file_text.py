@@ -6,13 +6,19 @@ from utils import MetadataDB, common2 as cm2  # database connectivity related cl
 from utils.log_utils import deactivate_logger_common
 from utils import global_const as gc
 from .file import File
-from .file_utils import StudyConfig, FieldIdMethod, load_configuration
+from .file_utils import StudyConfig, FieldIdMethod, load_configuration, setup_common_basic_file_parameters
 from .row import Row
 
 
 # metadata text file class
 class MetaFileText(File):
-    def __init__(self, filepath, cfg_path='', file_type=1, file_delim=','):
+    def __init__(self, filepath, cfg_path='', file_type=None, file_delim=None):
+        # setup default parameters
+        if not file_type:
+            file_type = 1
+        if not file_delim:
+            file_delim = ','
+
         File.__init__(self, filepath, file_type, file_delim)
 
         self.db_response_alerts = None  # keeps list of notifications form DB submissions that returned not OK status
@@ -34,6 +40,19 @@ class MetaFileText(File):
             self.cfg_file = StudyConfig.config_loc
             self.file_dict = OrderedDict()
             self.rows = OrderedDict()
+
+            setup_common_basic_file_parameters(self)
+            """
+            replace_blanks_in_header = self.cfg_file.get_item_by_key('replace_blanks_in_header')
+            # set parameter to True or False, if it was set likewise in the config, otherwise keep the default value
+            if replace_blanks_in_header.lower() in ['true', 'yes']:
+                self.replace_blanks_in_header = True
+            if replace_blanks_in_header.lower() in ['false', 'no']:
+                self.replace_blanks_in_header = False
+            header_row_num = self.cfg_file.get_item_by_key('header_row_number')
+            if header_row_num and header_row_num.isnumeric():
+                self.header_row_num = int(header_row_num)
+            """
         else:
             _str = 'Study configuration file "{}" does not exist, configuration loading was aborted.'.format(cfg_path)
             self.error.add_error(_str)
@@ -213,7 +232,7 @@ class MetaFileText(File):
         self._verify_id_method(method, fields_to_check_param_name)  # check that provided methods exist
         self._verify_field_id_type_vs_method(method, fields, field_id_method_param_name)  # check field ids vs method
 
-        hdrs = self.headers  # self.get_headers()
+        hdrs = self.headers()  # self.get_headers()
 
         i = 0  # keeps field count
         for hdr in hdrs:
@@ -314,6 +333,14 @@ class MetaFileText(File):
         # TODO: validate MDB study_id. If it not set, attempt to create a study.
         # If this process fails, report a File lever error.
 
+        # verify that number of rows in the file bigger than the header row number
+        num_rows = self.rows_count()
+        if self.header_row_num >= num_rows:
+            _str = "There are no records to process since header row (#{}) more than total number " \
+                   "of rows in the file - {}.".format(self.header_row_num, num_rows)
+            self.error.add_error(_str)
+            self.logger.error(_str)
+
         if self.error.errors_exist():
             # report file level errors to Log and do not process rows
             self.logger.error('File level errors we identified! Aborting the file processing.')
@@ -323,8 +350,7 @@ class MetaFileText(File):
         else:
             # proceed with processing file, if no file-level errors were found
             self.logger.info('Proceeding with processing rows of the file.')
-            num_rows = self.rows_count()
-            for i in range(1, num_rows):
+            for i in range(self.header_row_num, num_rows):  # for i in range(1, num_rows):
                 self.logger.debug('Processing row #{} out of {}.'.format(i, num_rows))
                 row = self.get_file_row(i + 1)
                 self.rows[row.row_number] = row  # add Row class reference to the list of all rows

@@ -28,7 +28,7 @@ class File:
         self.logger = None
         self.log_handler = None
 
-    @property
+    # @property
     def headers(self):
         if not self.__headers:
             self.get_headers()
@@ -104,7 +104,10 @@ class File:
         row_list = list(reader([row], delimiter=self.file_delim, skipinitialspace=True))[0]
         return row_list
 
-    def rows_count(self, exclude_header=False):
+    def rows_count(self, exclude_header=None):
+        # setup default parameters
+        if not exclude_header:
+            exclude_header = False
         num = len(self.get_file_content())
         if exclude_header:
             num = num - 1
