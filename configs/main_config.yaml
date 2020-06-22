@@ -1,7 +1,7 @@
 DB:
     # prod conn string: Driver={ODBC Driver 17 for SQL Server};Server=10.160.20.65\SSQL_2016;Database=dw_motrpac;UID=;PWD=;
     # DB connection string
-    mdb_conn_str: Driver={ODBC Driver 17 for SQL Server};Server=localhost\sqlexpress;Database=dw_motrpac;UID={!db_user_name!};PWD={!db_user_pwd!}
+    mdb_conn_str: Driver={ODBC Driver 17 for SQL Server};Server=10.160.20.65,51261;Database=dw_motrpac;UID={!db_user_name!};PWD={!db_user_pwd!}
     db_user_name_pl_holder: "{!db_user_name!}"
     db_user_pwd_pl_holder: "{!db_user_pwd!}"
     env_db_user_name: APP_DB_USER_NAME
@@ -22,13 +22,14 @@ DB:
 Location:
     # path to the folder where all data files are located
     #local path
-    data_folder: D:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/datafiles
+    data_folder: /mnt/researchsan02a/Metadata_Processing
     # production path
     # data_folder: J:\Metadata_Processing
 
     ignore_files:
         - ".DS_Store"
         - "study.cfg.yaml"
+        - "Thumbs.db"
 
     #name of the folder where all logs files will be stored
     log_folder_name: logs
@@ -40,7 +41,7 @@ Logging:
 
     #defines log levels to be used for "main" and "file" logs. Usual values are INFO and DEBUG
     main_log_level: INFO  # DEBUG
-    file_log_level: DEBUG
+    file_log_level: INFO
 
     #name for the each type of log (moved to global_const.py)
     #main_log_name: main_log
