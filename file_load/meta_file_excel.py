@@ -23,6 +23,9 @@ class MetaFileExcel(MetaFileText):
 
         self.db_response_alerts = None  # keeps list of notifications form DB submissions that returned not OK status
         self.db_submitted_count = 0  # keeps count of submitted to DB rows
+        self.cfg_file = None
+        self.file_dict = None
+        self.rows = None
 
         self.logger = self.setup_logger(self.wrkdir, self.filename)
 

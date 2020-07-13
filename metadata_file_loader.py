@@ -86,12 +86,16 @@ if __name__ == '__main__':
                         # save timestamp of beginning of the file processing
                         ts = time.strftime("%Y%m%d_%H%M%S", time.localtime())
 
-                        mlog.info('Start processing {} file.'.format(fl_path))
+                        if not fl_ob.error.errors_exist():
+                            mlog.info('Start processing {} file.'.format(fl_path))
+                            # process selected file
+                            fl_ob.process_file()
+                            mlog.info('Finish processing {} file.'.format(fl_path))
+                        else:
+                            mlog.info('Skipping processing of the file "{}" since some errors were identified '
+                                      'during its initializing. Reported error(s): {}'
+                                      .format(fl_path, fl_ob.error.get_errors_to_str()))
 
-                        # process selected file
-                        fl_ob.process_file()
-
-                        mlog.info('Finish processing {} file.'.format(fl_path))
                         fl_proc_cnt += 1
 
                         # get total count of rows in the file
