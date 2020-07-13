@@ -23,9 +23,9 @@ class MetaFileText(File):
 
         self.db_response_alerts = None  # keeps list of notifications form DB submissions that returned not OK status
         self.db_submitted_count = 0 #keeps count of submitted to DB rows
-        cfg_file = None
-        file_dict = None  # OrderedDict()
-        rows = None  # OrderedDict()
+        self.cfg_file = None
+        self.file_dict = None
+        self.rows = None
 
         self.logger = self.setup_logger(self.wrkdir, self.filename)
         self.logger.info('Start working with file {}'.format(filepath))
