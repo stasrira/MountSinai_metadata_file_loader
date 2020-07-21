@@ -6,8 +6,7 @@ from jinja2 import Environment, FileSystemLoader, escape
 from utils import global_const as gc
 # from utils import setup_logger_common  # TODO: figure out how to import setup_logger_common from utils module
 from .log_utils import setup_logger_common
-
-
+import shutil
 
 
 def get_project_root():
@@ -167,8 +166,10 @@ def eval_cfg_value(cfg_val, mlog_obj, error_obj, self_obj_ref = None):
             except Exception as ex:
                 _str = 'Error "{}" occurred while attempting to evaluate the following value "{}" \n{} ' \
                     .format(ex, cfg_val, traceback.format_exc())
-                mlog_obj.error(_str)
-                error_obj.add_error(_str)
+                if mlog_obj:
+                    mlog_obj.error(_str)
+                if error_obj:
+                    error_obj.add_error(_str)
                 out_val = ''
         else:
             out_val = cfg_val
