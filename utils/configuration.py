@@ -5,9 +5,9 @@ from utils import common as cm
 class ConfigData:
 
     """
-    def __init__(self, cfg_path):
+    def __init__(self, study_cfg_path):
         self.loaded = False
-        with open(cfg_path, 'r') as ymlfile:
+        with open(study_cfg_path, 'r') as ymlfile:
             self.cfg = yaml.load(ymlfile)
         self.loaded = True
     """
@@ -18,7 +18,7 @@ class ConfigData:
         if cfg_path and cm.file_exists(cfg_path):
             with open(cfg_path, 'r') as ymlfile:
                 self.cfg = yaml.load(ymlfile)
-            # self.prj_wrkdir = os.path.dirname(os.path.abspath(cfg_path))
+            # self.prj_wrkdir = os.path.dirname(os.path.abspath(study_cfg_path))
             self.loaded = True
         else:
             if cfg_content_dict:

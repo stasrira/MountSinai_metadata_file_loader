@@ -53,6 +53,19 @@ if __name__ == '__main__':
             st_path = Path(datafiles_path) / st_dir
             mlog.info('Start processing study: "{}", full path: {}'.format(st_dir, st_path))
 
+            # load local study config file
+            study_cfg_path = st_path / gc.DEFAULT_STUDY_CONFIG_FILE
+            mlog.info('Loading config file for the current study: {}'.format(study_cfg_path))
+            study_cfg = ConfigData(study_cfg_path)
+            # check if any command is expected to be run on study init event
+            exec_cmd = study_cfg.get_value('on_study_init_exec_command')
+
+            if exec_cmd:
+                mlog.info('Study On-Init command is provided: {}'.format(exec_cmd))
+                mlog.info('Attempting to execute the Study On-Init')
+                # if exec_cmd is present attempt to run it
+                cm.eval_cfg_value (exec_cmd, mlog, None )
+
             (_, _, proc_files) = next(walk(Path(st_path)))
             # filter out file that should be ignored
             # ignore_files = ['.DS_Store']
@@ -77,11 +90,11 @@ if __name__ == '__main__':
                         if fl[-4:] == '.xls' or fl[-5:] == '.xlsx':
                             # identify excel file and create appropriate object to handle it
                             mlog.info('File {} was identified as Excel file'.format(fl_path))
-                            fl_ob = MetaFileExcel(fl_path)
+                            fl_ob = MetaFileExcel(fl_path, str(study_cfg_path))
                         else:
                             # create an object to process text files
                             mlog.info('File {} was identified as Text file'.format(fl_path))
-                            fl_ob = MetaFileText(fl_path)
+                            fl_ob = MetaFileText(fl_path, str(study_cfg_path))
 
                         # save timestamp of beginning of the file processing
                         ts = time.strftime("%Y%m%d_%H%M%S", time.localtime())
@@ -145,7 +158,7 @@ if __name__ == '__main__':
                             'db_response_alerts_count': db_response_alerts_count,
                             'db_response_alerts': fl_ob.db_response_alerts,
                             'file_errors_present': fl_ob.error.errors_exist(),
-                            'row_errors_present': fl_ob.error.row_errors_count()
+                            'row_errors_present': (fl_ob.error.row_errors_count() > 0)
                         }
                         email_body_part = cm.populate_email_template('processed_file.html', template_feeder)
                         email_msgs_study.append(email_body_part)
