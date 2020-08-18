@@ -31,7 +31,7 @@ DATA:
       report_columns: ["sample_id", "sample_type", "subject_id", "redcap_event_name"]
       message: Visit section was not finalized yet.
     -
-      rule: "eval!self.get_df_col_obj('registration_complete') == 'Complete'"
+      rule: "eval!self.get_df_col_obj('registration_complete') == 'Complete'" #"eval! 1 == 1" #
       report_failure: True
       report_failure_details: False # if set to True, will report each failed row; if set to False, will report just total count
       report_columns: ["sample_id", "sample_type", "subject_id", "redcap_event_name"]
@@ -87,6 +87,8 @@ DATA:
         - "location_change"
         - "ppe_use"
         - "ppe_details"
+        - "visit_complete"
+        - "registration_complete"
 
   output_dataset:
     sample_id: "sample_id"
@@ -118,6 +120,8 @@ DATA:
     - "location_change"
     - "ppe_use"
     - "ppe_details"
+    - "visit_complete"
+    - "registration_complete"
 
   record_dictionary:
     #this a default delimiter character to separate config values provided as a list
