@@ -335,7 +335,11 @@ class MetaFileText(File):
                     if not row.error.errors_exist():
                         _str = 'Row #{}. Sample Id "{}" was submitted to MDB. Status: {}; Description: {}'.format(
                             row.row_number, row.sample_id, mdb_resp[0][0]['status'], mdb_resp[0][0]['description'])
-                        self.logger.info(_str)
+                        # depending on a status from MDB response, logging entry will be set as Info or Error
+                        if mdb_resp[0][0]['status'] == 'OK':
+                            self.logger.info(_str)
+                        else:
+                            self.logger.error(_str)
 
                         if mdb_resp[0][0]['status'] != 'OK':
                             if not self.db_response_alerts:

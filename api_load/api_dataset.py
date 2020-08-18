@@ -136,6 +136,11 @@ class ApiDataset():
             # print(json.dumps(row))
             r_cnt += 1
 
+            #replace single quotes with 2 single quotes in each field of the row dictionary -needed for submission to DB
+            for fld in row:
+                value = row[fld]
+                row[fld] = value.replace('\'', '\'\'')
+
             if not self.error.errors_exist():
                 self.logger.info(
                     'Record #{}. Proceeding to save it to database. Row data: {}'.format(r_cnt, row))
@@ -151,7 +156,11 @@ class ApiDataset():
                 if not self.error.errors_exist():
                     _str = 'Record #{}. Sample Id "{}" was submitted to MDB. Status: {}; Description: {}'.format(
                         r_cnt, row[sample_id_to_db], mdb_resp[0][0]['status'], mdb_resp[0][0]['description'])
-                    self.logger.info(_str)
+                    # depending on a status from MDB response, logging entry will be set as Info or Error
+                    if mdb_resp[0][0]['status'] == 'OK':
+                        self.logger.info(_str)
+                    else:
+                        self.logger.error(_str)
                     if mdb_resp[0][0]['status'] != 'OK':
                         # if db response status is not OK, record it to the db_response_alerts list
                         if not self.db_response_alerts:
