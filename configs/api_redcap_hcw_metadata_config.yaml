@@ -25,13 +25,13 @@ DATA:
   # - function self.get_df_col_obj will return value of the column from a data frame based on the column's name provided
   validation_rules:
     -
-      rule: "eval! 1 == 1" # "eval!self.get_df_col_obj('visit_complete') == 'Complete'" # Unverified
+      rule: "eval!self.get_df_col_obj('visit_complete') == 'Complete'" # Unverified
       report_failure: True
       report_failure_details: False # if set to True, will report each failed row; if set to False, will report just total count
       report_columns: ["sample_id", "sample_type", "subject_id", "redcap_event_name"]
       message: Visit section was not finalized yet.
     -
-      rule: "eval! 1 == 1" # "eval!self.get_df_col_obj('registration_complete') == 'Complete'"
+      rule: "eval!self.get_df_col_obj('registration_complete') == 'Complete'"
       report_failure: True
       report_failure_details: False # if set to True, will report each failed row; if set to False, will report just total count
       report_columns: ["sample_id", "sample_type", "subject_id", "redcap_event_name"]
