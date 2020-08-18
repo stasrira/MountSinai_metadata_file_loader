@@ -71,53 +71,6 @@ class MetaFileText(File):
 
         return cm2.get_dataset_dictionary (hdrs, cfg.get_all_data(), sort, sort_by_field)
 
-
-    # read headers of the file and create a dictionary for it
-    # dictionary for creating files should preserve columns order
-    # dictionary to be submitted to DB has to be sorted alphabetically
-    def get_file_dictionary_orig_todelete(self, sort=False, sort_by_field=''):
-
-        # dict1 = OrderedDict()
-
-        cfg = self.get_config_info()  # get reference to config info class
-        fields = cfg.get_item_by_key('dict_tmpl_fields_node')  # name of the node in dictionary holding array of fields
-
-        if not self.file_dict:
-            dict1 = eval(cfg.get_item_by_key('dict_tmpl'))  # {fields:[]}
-            fld_dict_tmp = dict1[fields][0]
-            dict1[fields].clear()
-
-            if dict1:
-                hdrs = self.get_headers()  # self.get_row_by_number(1).split(self.file_delim)
-
-                upd_flds = cfg.get_item_by_key('dict_field_tmpl_update_fields').split(
-                    self.config_value_list_separator())
-
-                for hdr in hdrs:
-                    # hdr = hdr.strip().replace(' ', '_') # this should prevent spaces in the name of the column headers
-                    fld_dict = fld_dict_tmp.copy()
-                    for upd_fld in upd_flds:
-                        fld_dict[upd_fld] = hdr.strip()
-                    dict1[fields].append(fld_dict)
-
-                self.file_dict = dict1
-
-        dict1 = self.file_dict
-
-        # sort dictionary if requested
-        if sort:
-            # identify name of the field to apply sorting on the dictionary
-            if len(sort_by_field) == 0 or sort_by_field not in dict1[fields][0]:
-                sort_by_field = cfg.get_item_by_key('dict_field_sort_by')
-                if len(sort_by_field) == 0:
-                    sort_by_field = 'name'  # hardcoded default
-
-            # apply sorting, if given field name present in the dictionary structure
-            if sort_by_field in dict1[fields][0]:
-                dict1[fields] = sorted(dict1[fields], key=lambda i: i[sort_by_field])
-
-        return dict1
-
     def get_file_dictionary_json(self, sort=False, sort_by_field=''):
         dict1 = self.get_file_dictionary(sort, sort_by_field)  # get dictionary object for the file dictionary
         return json.dumps(dict1)  # convert received dictionary to JSON
@@ -146,21 +99,26 @@ class MetaFileText(File):
         row = Row(self, rownum, lst_content, hdrs)
         row.error = RowError(row)
 
-        if len(hdrs) == len(lst_content):
-            self._validate_mandatory_fields_per_row(row)  # validate row for required fields being populated
+        if not row.isempty():
+            if len(hdrs) == len(lst_content):
+                self._validate_mandatory_fields_per_row(row)  # validate row for required fields being populated
 
-            # create dictionary of the row, so it can be converted to JSON
-            for hdr, cnt in zip(hdrs, lst_content):
-                row.row_dict[hdr.strip()] = cnt.strip()
+                # create dictionary of the row, so it can be converted to JSON
+                for hdr, cnt in zip(hdrs, lst_content):
+                    row.row_dict[hdr.strip()] = cnt.strip().replace('\'','\'\'')
 
-            # set sample id for the row
-            row.assign_sample_id()
+                # set sample id for the row
+                row.assign_sample_id()
+            else:
+                row.row_dict = None
+                _str = ('Row #{}. Incorrect number of fields! The row contains {} field(s), while {} '
+                        'headers are present.').format(rownum, len(lst_content), len(hdrs))
+                row.error.add_error(_str)
+                self.logger.error(_str)
         else:
             row.row_dict = None
-            _str = ('Row #{}. Incorrect number of fields! The row contains {} field(s), while {} '
-                    'headers are present.').format(rownum, len(lst_content), len(hdrs))
-            row.error.add_error(_str)
-            self.logger.error(_str)
+            _str = ('Row #{}. The row is empty and will be ignored.').format(rownum)
+            self.logger.warning(_str)
 
         return row  # out_dict
 
@@ -355,7 +313,7 @@ class MetaFileText(File):
                 row = self.get_file_row(i + 1)
                 self.rows[row.row_number] = row  # add Row class reference to the list of all rows
 
-                if not row.error.errors_exist():
+                if not row.error.errors_exist() and not row.isempty():
                     # print ('No Errors - Saving to DB, Row Info: {}'.format (row.to_str()))
                     self.logger.info(
                         'Row #{}. No Row level errors were identified. Saving it to database. Row data: {}'.format(
@@ -393,12 +351,15 @@ class MetaFileText(File):
                             row.sample_id, row.error.get_errors_to_str())
                         self.logger.error(_str)
                 else:
-                    # report to log file if Row level errros were identified
-                    _str = 'Row #{}. Row level errors were identified. Errors: {}; Row data: {}'.format(
-                        row.row_number, row.error.get_errors_to_str(), row.row_content)
-                    self.logger.error(_str)
-                    # print ('Add row to Error file - Errors Present {}, Row Info: {}'.
-                    # format(row.error.get_errors_to_str(), row.row_content))
+                    if row.error.errors_exist():
+                        # report to log file if Row level errros were identified
+                        _str = 'Row #{}. Row level errors were identified. Errors: {}; Row data: {}'.format(
+                            row.row_number, row.error.get_errors_to_str(), row.row_content)
+                        self.logger.error(_str)
+                    if row.isempty():
+                        _str = 'Row #{}. The row is empty and was not submitted to DB.'.format(row.row_number)
+                        self.logger.warning(_str)
+
 
         # report error summary of processing the file
         self.logger.info('SUMMARY OF ERRORS ==============>')

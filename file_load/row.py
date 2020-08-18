@@ -59,6 +59,13 @@ class Row:
         }
         return row
 
+    def isempty(self):
+        row_str = ''.join([str(field).strip() for field in self.row_content])
+        if len(row_str) == 0:
+            return True
+        else:
+            return False
+
     def assign_sample_id(self):
         self.file.logger.debug('Row #{}. Assigning sample id value.'.format(self.row_number))
 
