@@ -6,7 +6,7 @@ import getpass
 from os import walk
 import time
 import traceback
-from utils import ConfigData, common as cm, global_const as gc, send_email as email
+from utils import ConfigData, common as cm, common2 as cm2, global_const as gc, send_email as email
 from api_load import ApiProcess
 
 
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     mlog = cm.setup_logger(m_cfg, cur_dir, gc.CURRENT_PROCCESS_LOG_ID)
 
     # validate expected environment variables; if some variable are not present, abort execution
-    cm.validate_available_envir_variables(mlog, m_cfg, ['default', 'redcap'])
+    cm2.validate_available_envir_variables(mlog, m_cfg, ['default', 'redcap'], str(Path(os.path.abspath(__file__))))
 
     email_msgs_apicalls = []
 

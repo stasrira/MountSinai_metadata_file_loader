@@ -34,41 +34,6 @@ def extend_list_with_other_list(list_trg, list_to_add):
         list_trg.extend(list_to_add)
     return list_trg
 
-
-# Validate expected Environment variables; if some variable are not present, abort execution
-# setup environment variable sources:
-# windows: https://www.youtube.com/watch?v=IolxqkL7cD8
-# linux: https://www.youtube.com/watch?v=5iWhQWVXosU
-def validate_available_envir_variables (mlog, m_cfg, env_cfg_groups = None):
-    # env_cfg_groups should be a list of config groups of expected environment variables
-    if not env_cfg_groups:
-        env_cfg_groups = []
-    if not isinstance(env_cfg_groups, list):
-        env_cfg_groups = [env_cfg_groups]
-
-    mlog.info('Start validating presence of required environment variables.')
-    env_vars = []
-    env_var_confs = m_cfg.get_value('Validate/environment_variables')  # get dictionary of envir variables lists
-    if env_var_confs and isinstance(env_var_confs, dict):
-        for env_gr in env_var_confs:  # loop groups of envir variables
-            if env_gr in env_cfg_groups:
-                # proceed here for the "default" group of envir variables
-                env_vars = extend_list_with_other_list(env_vars, env_var_confs[env_gr])
-        # validate existence of the environment variables
-        missing_env_vars = []
-        for evar in env_vars:
-            if not validate_envir_variable(evar):
-                missing_env_vars.append(evar)
-
-        if missing_env_vars:
-            # check if any environment variables were recorded as missing
-            mlog.error('The following environment variables were not found: {}. Aborting execution. '
-                       'Make sure that the listed variables exist before next run.'.format(missing_env_vars))
-            exit(1)
-        else:
-            mlog.info('All required environment variables were found.')
-
-
 def setup_logger(m_cfg, log_dir_location, cur_proc_name_prefix = None):
     # get logging related config values
     common_logger_name = gc.MAIN_LOG_NAME

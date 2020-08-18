@@ -6,7 +6,7 @@ import getpass
 from os import walk
 import time
 import traceback
-from utils import ConfigData, common as cm, global_const as gc, send_email as email
+from utils import ConfigData, common as cm, common2 as cm2, global_const as gc, send_email as email
 
 
 # if executed by itself, do the following
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     mlog = cm.setup_logger(m_cfg, cur_dir, gc.CURRENT_PROCCESS_LOG_ID)
 
     # validate expected environment variables; if some variable are not present, abort execution
-    cm.validate_available_envir_variables(mlog, m_cfg, ['default'])
+    cm2.validate_available_envir_variables(mlog, m_cfg, ['default'], str(Path(os.path.abspath(__file__))))
 
     # get data processing related config values
     datafiles_path = m_cfg.get_value('Location/data_folder')
@@ -37,12 +37,34 @@ if __name__ == '__main__':
     # Verify that target directory (df_path) is accessible for the current user (under which the app is running)
     # Identify the user under which the app is running if the df_path is not accessible
     if not os.path.exists(df_path):
-        mlog.error('Directory "{}" does not exist or not accessible for the current user. Aborting execution. '
-                   'Expected user login: "{}", Effective user: "{}"  '.format(df_path, os.getlogin(), getpass.getuser()))
+        _str = 'Directory "{}" does not exist or not accessible for the current user. Aborting execution. ' \
+               'Expected user login: "{}", Effective user: "{}"'.format(df_path, os.getlogin(), getpass.getuser())
+        mlog.error(_str)
+
+        # send notification email alerting about the error case
+        email_subject = 'Error occurred during running Metadata File Loader tool.'
+        email_body = 'The following error caused interruption of execution of the application<br/>' \
+                     + str(Path(os.path.abspath(__file__))) \
+                     + '<br/><br/><font color="red">' \
+                     + _str + '</font>'
+        try:
+            email.send_yagmail(
+                emails_to=m_cfg.get_value('Email/sent_to_emails'),
+                subject=email_subject,
+                message=email_body
+                # ,attachment_path = email_attchms_study
+            )
+        except Exception as ex:
+            # report unexpected error during sending emails to a log file and continue
+            _str = 'Unexpected Error "{}" occurred during an attempt to send email upon ' \
+                   'finishing execution of file monitoring app.\n{}'.format(ex, traceback.format_exc())
+            mlog.critical(_str)
+
         exit(1)
 
     # start processing metadata files at the appropriate locations
     try:
+        fl_proc_cnt_total = 0  # variable to keep total count of processed files
 
         (_, dirstudies, _) = next(walk(df_path))
         # print('Study dirs: {}'.format(dirstudies))
@@ -194,6 +216,8 @@ if __name__ == '__main__':
                         raise
             mlog.info('Number of files processed for study "{}" = {}'.format(st_dir, fl_proc_cnt))
 
+            fl_proc_cnt_total += fl_proc_cnt
+
             if fl_proc_cnt>0:
                 # collect final details and send email about this study results
                 email_subject = 'Metadata files loading for study "{}"'.format(st_dir)
@@ -220,10 +244,30 @@ if __name__ == '__main__':
                 except Exception as ex:
                     # report unexpected error during sending emails to a log file and continue
                     _str = 'Unexpected Error "{}" occurred during an attempt to send email upon ' \
-                           'finishing processing "{}" study: {}\n{} '\
+                           'finish processing "{}" study: {}\n{} '\
                         .format(ex, st_dir, os.path.abspath(__file__), traceback.format_exc())
                     mlog.critical(_str)
 
+        if fl_proc_cnt_total == 0:
+            # if no files were found for processing, send a summary email confirming the run of the application
+            email_subject = 'Metadata File Loader has run.'.format(st_dir)
+            email_body = ('Metadata File Loader<br/>{}<br/>ran successfully, however no metadata files to be processed'
+                          ' were found.'.format (str(Path(os.path.abspath(__file__)))))
+            try:
+                if m_cfg.get_value('Email/send_emails'):
+                    email.send_yagmail(
+                        emails_to=m_cfg.get_value('Email/sent_to_emails'),
+                        subject=email_subject,
+                        message=email_body
+                        # ,attachment_path = email_attchms_study
+                    )
+            except Exception as ex:
+                # report unexpected error during sending emails to a log file and continue
+                _str = 'Unexpected Error "{}" occurred during an attempt to send email upon ' \
+                       'finish running Metadata File Loader application<br/>{}' \
+                    .format(ex, str(Path(os.path.abspath(__file__))), traceback.format_exc())
+                mlog.critical(_str)
+            pass
 
     except Exception as ex:
         # report unexpected error to log file
