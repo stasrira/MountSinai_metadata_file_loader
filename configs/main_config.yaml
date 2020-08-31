@@ -33,6 +33,7 @@ Location:
     #name of the folder where all logs files will be stored
     log_folder_name: logs
     processed_folder_name: processed
+    processed_file_copies_max_number: -1 #number of copies of file allowed; -1 - stands for unlimited number of copies, if ommitted the default value from GlobalConst will be used
 
 Logging:
     #main log - log created by the main application

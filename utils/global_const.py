@@ -22,6 +22,12 @@ FILE_LOG_NAME = 'file_processing_log'
 LOG_FOLDER_NAME = 'logs'
 PROCESSED_FOLDER_NAME = 'processed'
 
+PROCESSED_FOLDER_MAX_FILE_COPIES = -1  # reflects number of copies allowed in addition to the file itself,
+                                        # i.e. 'abc.xlsx' and its copies 'abc(1).xlsx', etc.,
+                                        # negative value stands for no limit of copies,
+                                        # this value can be overwritten by the Location/processed_file_copies_max_number
+                                        # parameter from the main config
+
 # predefined paths in the main config file for various variables
 # STUDY_LOGGER_NAME_CFG_PATH = 'Logging/file_log_name'
 STUDY_LOGGING_LEVEL_CFG_PATH = 'Logging/file_log_level'

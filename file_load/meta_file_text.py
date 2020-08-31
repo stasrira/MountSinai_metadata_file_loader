@@ -26,6 +26,7 @@ class MetaFileText(File):
         self.cfg_file = None
         self.file_dict = None
         self.rows = None
+        self.processed_add_datestamp = False
 
         self.logger = self.setup_logger(self.wrkdir, self.filename)
         self.logger.info('Start working with file {}'.format(filepath))
@@ -42,17 +43,6 @@ class MetaFileText(File):
             self.rows = OrderedDict()
 
             setup_common_basic_file_parameters(self)
-            """
-            replace_blanks_in_header = self.cfg_file.get_item_by_key('replace_blanks_in_header')
-            # set parameter to True or False, if it was set likewise in the config, otherwise keep the default value
-            if replace_blanks_in_header.lower() in ['true', 'yes']:
-                self.replace_blanks_in_header = True
-            if replace_blanks_in_header.lower() in ['false', 'no']:
-                self.replace_blanks_in_header = False
-            header_row_num = self.cfg_file.get_item_by_key('header_row_number')
-            if header_row_num and header_row_num.isnumeric():
-                self.header_row_num = int(header_row_num)
-            """
         else:
             _str = 'Study configuration file "{}" does not exist, configuration loading was aborted.'.format(cfg_path)
             self.error.add_error(_str)

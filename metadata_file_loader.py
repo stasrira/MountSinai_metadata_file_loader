@@ -26,6 +26,9 @@ if __name__ == '__main__':
     # get data processing related config values
     datafiles_path = m_cfg.get_value('Location/data_folder')
     ignore_files = m_cfg.get_value('Location/ignore_files')
+    processed_file_copies_max_number = m_cfg.get_value('Location/processed_file_copies_max_number')
+    if not processed_file_copies_max_number is None:
+        gc.PROCESSED_FOLDER_MAX_FILE_COPIES = processed_file_copies_max_number
     processed_folder_name = gc.PROCESSED_FOLDER_NAME
     # datafiles_path = 'E:/MounSinai/MoTrPac_API/ProgrammaticConnectivity/MountSinai_metadata_file_loader/DataFiles'
     df_path = Path(datafiles_path)
@@ -158,16 +161,24 @@ if __name__ == '__main__':
                         # print('=============>>Row level errors: {}'.format(fl_ob.error.row_errors_count()))
 
                         processed_dir = Path(st_path) / processed_folder_name  # 'Processed'
-                        if not os.path.exists(processed_dir):
+                        # if not os.path.exists(processed_dir):
                             # if Processed folder does not exist in the current study folder, create it
-                            mlog.info('Creating directory for processed files "{}"'.format(processed_dir))
-                            os.mkdir(processed_dir)
+                        #    mlog.info('Creating directory for processed files "{}"'.format(processed_dir))
+                        #    os.mkdir(processed_dir)
 
-                        fl_processed_name = ts + '_' + fl_status + '_' + fl
+                        if fl_ob.processed_add_datestamp:
+                            new_file_name = ts + '_' + fl
+                        else:
+                            new_file_name = fl
+
+                        fl_processed_name = cm.move_file_to_processed(fl_path, new_file_name, processed_dir,fl_ob.logger,fl_ob.error)
+                        # fl_processed_name = ts + '_' + fl_status + '_' + fl
                         # print('New file name: {}'.format(ts + '_' + fl_status + '_' + fl))
                         # move processed files to Processed folder
-                        os.rename(fl_path, processed_dir / fl_processed_name)
-                        mlog.info('Processed file "{}" was moved and renamed as: "{}"'
+                        # os.rename(fl_path, processed_dir / fl_processed_name)
+
+                        if fl_processed_name:
+                            mlog.info('Processed file "{}" was moved(renamed) to: "{}"'
                                   .format(fl_path, processed_dir / fl_processed_name))
 
                         # create a dictionary to feed into template for preparing an email body
