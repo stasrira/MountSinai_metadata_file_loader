@@ -87,6 +87,8 @@ DATA:
         - "location_change"
         - "ppe_use"
         - "ppe_details"
+        - "visit_complete"
+        - "registration_complete"
 
   output_dataset:
     sample_id: "sample_id"
@@ -118,6 +120,8 @@ DATA:
     - "location_change"
     - "ppe_use"
     - "ppe_details"
+    - "visit_complete"
+    - "registration_complete"
 
   record_dictionary:
     #this a default delimiter character to separate config values provided as a list
