@@ -6,6 +6,7 @@ import getpass
 from os import walk
 import time
 import traceback
+import fnmatch
 from utils import ConfigData, common as cm, common2 as cm2, global_const as gc, send_email as email
 
 
@@ -94,9 +95,14 @@ if __name__ == '__main__':
             (_, _, proc_files) = next(walk(Path(st_path)))
             # filter out file that should be ignored
             # ignore_files = ['.DS_Store']
+
+            exl_files = []
+            for ign_item in ignore_files:
+                exl_files.extend (fnmatch.filter(proc_files, ign_item))
+
             proc_files = [file for file in proc_files
                           # '~$' should filter out temp file created when excel is open
-                          if file not in ignore_files and not file.startswith('~$')]
+                          if file not in exl_files and not file.startswith('~$')]
 
             mlog.info('Files presented (count = {}): "{}"'.format(len(proc_files), proc_files))
             # print ('Study st_dir files: {}'.format(proc_files))
@@ -117,9 +123,15 @@ if __name__ == '__main__':
                             mlog.info('File {} was identified as Excel file'.format(fl_path))
                             fl_ob = MetaFileExcel(fl_path, str(study_cfg_path))
                         else:
-                            # create an object to process text files
-                            mlog.info('File {} was identified as Text file'.format(fl_path))
-                            fl_ob = MetaFileText(fl_path, str(study_cfg_path))
+                            # check if the provided file is not binary one
+                            if not cm.is_binary(fl_path):
+                                # create an object to process text files
+                                mlog.info('File {} was identified as Text file'.format(fl_path))
+                                fl_ob = MetaFileText(fl_path, str(study_cfg_path))
+                            else:
+                                mlog.warning('File "{}" was identified as binary and will not be processed.'
+                                             .format(fl_path))
+                                continue #skip to the next file in the list
 
                         # save timestamp of beginning of the file processing
                         ts = time.strftime("%Y%m%d_%H%M%S", time.localtime())

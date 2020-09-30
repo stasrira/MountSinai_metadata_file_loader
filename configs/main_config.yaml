@@ -29,6 +29,8 @@ Location:
     ignore_files:
         - ".DS_Store"
         - "study.cfg.yaml"
+        #- "*.zip"
+        #- "*.rar"
 
     #name of the folder where all logs files will be stored
     log_folder_name: logs

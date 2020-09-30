@@ -1,7 +1,9 @@
-jinja2
-certifi
-pycurl
+jinja2~=2.11.2
+certifi~=2020.4.5.1
+pycurl~=7.43.0.5
 pyodbc==4.0.26
 yagmail==0.11.220
 xlrd==1.2.0
 PyYAML==5.1.2
+
+pandas~=1.0.3

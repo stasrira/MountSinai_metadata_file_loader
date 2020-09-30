@@ -191,3 +191,11 @@ def move_file_to_processed(file_path, new_file_name, processed_dir_path, log_obj
         error_obj.add_error(_str)
         pass
     return file_name_new_path
+
+def is_binary(file_name):
+    try:
+        with open(file_name, 'tr') as check_file:  # try open file in text mode
+            check_file.read()
+            return False
+    except:  # if fail then file is non-text (binary)
+        return True
