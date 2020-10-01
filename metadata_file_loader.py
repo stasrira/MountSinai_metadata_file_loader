@@ -78,7 +78,9 @@ if __name__ == '__main__':
 
             email_msgs_study = []
             email_attchms_study = []
-
+            
+            proc_files.sort() #sort items in the proc_files to predict order of processing of files
+            
             fl_proc_cnt = 0
             for fl in proc_files:
                 fl_path = Path(st_path) / fl
