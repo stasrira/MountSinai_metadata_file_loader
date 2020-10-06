@@ -26,7 +26,7 @@ class MetaFileText(File):
         self.cfg_file = None
         self.file_dict = None
         self.rows = None
-        self.processed_add_datestamp = False
+        self.processed_add_datestamp = gc.PROCESSED_ADD_DATESTAMP  # False
 
         self.logger = self.setup_logger(self.wrkdir, self.filename)
         self.logger.info('Start working with file {}'.format(filepath))

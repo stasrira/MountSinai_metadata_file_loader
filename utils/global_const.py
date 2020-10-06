@@ -27,6 +27,7 @@ PROCESSED_FOLDER_MAX_FILE_COPIES = -1  # reflects number of copies allowed in ad
                                         # negative value stands for no limit of copies,
                                         # this value can be overwritten by the Location/processed_file_copies_max_number
                                         # parameter from the main config
+PROCESSED_ADD_DATESTAMP = False  # this default value will be used if it is not explicitly set in the study's config
 
 # predefined paths in the main config file for various variables
 # STUDY_LOGGER_NAME_CFG_PATH = 'Logging/file_log_name'
