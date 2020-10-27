@@ -1,7 +1,8 @@
 DB:
-    # prod conn string: Driver={ODBC Driver 17 for SQL Server};Server=10.160.20.65\SSQL_2016;Database=dw_motrpac;UID=;PWD=;
+    # prod conn string: Driver={ODBC Driver 17 for SQL Server};Server=10.160.20.65,51261;Database=dw_motrpac;UID={!db_user_name!};PWD={!db_user_pwd!}
+    # New prod conn string: Driver={ODBC Driver 17 for SQL Server};Server=10.9.10.59,59105;Database=dw_motrpac;UID={!db_user_name!};PWD={!db_user_pwd!}
     # DB connection string
-    mdb_conn_str: Driver={ODBC Driver 17 for SQL Server};Server=10.160.20.65,51261;Database=dw_motrpac;UID={!db_user_name!};PWD={!db_user_pwd!}
+    mdb_conn_str: Driver={ODBC Driver 17 for SQL Server};Server=10.9.10.59,59105;Database=dw_motrpac;UID={!db_user_name!};PWD={!db_user_pwd!}
     db_user_name_pl_holder: "{!db_user_name!}"
     db_user_pwd_pl_holder: "{!db_user_pwd!}"
     env_db_user_name: APP_DB_USER_NAME
